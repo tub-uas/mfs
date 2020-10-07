@@ -29,11 +29,6 @@ void main_psu() {
 
 	while(1) {
 
-		// drv_led_msg(LED_ON);
-		// delay_ms(500);
-		// drv_led_msg(LED_OFF);
-		// delay_ms(500);
-
 		can_com_psu_t data;
 
 		ESP_ERROR_CHECK(drv_sense_ext_read_volt(SENSE_EXT_MAIN_ADDR, &data.sense_main_volt));

@@ -33,11 +33,6 @@ void main_ahrs() {
 
 	while(1) {
 
-		// drv_led_msg(LED_ON);
-		// delay_ms(500);
-		// drv_led_msg(LED_OFF);
-		// delay_ms(500);
-
 		can_com_ahrs_t ahrs_data;
 		get_attitude(&ahrs_data);
 
@@ -48,7 +43,6 @@ void main_ahrs() {
 
 		// TODO this could potentially send the same AHRS data twice, use notify or smth
 		delay_until_ms(&last_wake_time, 10);
-		// delay_ms(10);
 
 	}
 }

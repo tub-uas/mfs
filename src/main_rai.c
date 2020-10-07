@@ -113,7 +113,7 @@ void recv_rai() {
 
 				// We can note yet trust the rapsi. Therefore switch to general
 				// failsafe mode.
-				goto FAILSAFE
+				goto FAILSAFE;
 				// drv_pwm_set_arr(data.chnl, PWM_CH_NUM);
 				// drv_led_set(LED_FAST);
 				// ESP_LOGE(__FILE__, "RPI control, no PWM data");

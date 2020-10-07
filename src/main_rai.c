@@ -27,7 +27,7 @@ void send_rai() {
 
 	TickType_t last_wake_time = xTaskGetTickCount();
 
-	// TODO LED is controlled by recv worker for now (should also happen here)
+	// todo: LED is controlled by recv worker for now (should also happen here)
 	// drv_led_set(LED_ON_ALIVE);
 
 	while (1) {
@@ -110,20 +110,18 @@ void recv_rai() {
 
 				// Since we have valid CAN data, lets use that instead
 				// Still this is an error
-				// TODO check if we should really trust the system here
-				// or instead rather switch to internal PID
 
-				drv_pwm_set_arr(data.chnl, PWM_CH_NUM);
-				drv_led_set(LED_FAST);
-
-				ESP_LOGE(__FILE__, "RPI control, no PWM data");
+				// We can note yet trust the rapsi. Therefore switch to general
+				// failsafe mode.
+				goto FAILSAFE
+				// drv_pwm_set_arr(data.chnl, PWM_CH_NUM);
+				// drv_led_set(LED_FAST);
+				// ESP_LOGE(__FILE__, "RPI control, no PWM data");
 
 			} else {
 				// We also dont have valid CAN data
 
-				// TODO this is the internal failsafe
-				// We dont get data from the RPI, nor data from the SUMD
-				// This is where we need to rely on failsafe
+				FAILSAFE:
 
 				// Lets turn the motor off and put the plane into a right turn
 				pwm[0] = 900;

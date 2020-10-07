@@ -133,8 +133,8 @@ esp_err_t drv_ak8963_read_mag_vec(ak8963_mag_data_t *mag_vec) {
 		#endif
 
 	} else {
-		// ESP_LOGW(__FILE__, "Data not ready");
-		return ESP_FAIL;
+		// No new data available at this time
+		return ESP_ERR_TIMEOUT;
 	}
 
 	if (drv_ak8963_status()) {

@@ -282,13 +282,16 @@ void attitude_worker() {
 		ak8963_mag_data_t mag_raw;
 
 		if (drv_mpu9250_read_acc_vec(&acc_raw) != ESP_OK) {
-			// TODO
+			ESP_LOGE(__FILE__, "Error while reading accelerometer data from mpu9250");
 		}
+
 		if (drv_mpu9250_read_gyr_vec(&gyr_raw) != ESP_OK) {
-			// TODO
+			ESP_LOGE(__FILE__, "Error while reading gyroscope data from mpu9250");
 		}
-		if (drv_ak8963_read_mag_vec(&mag_raw) != ESP_OK) {
-			// TODO
+
+		esp_err_t ret = drv_ak8963_read_mag_vec(&mag_raw);
+		if (ret != ESP_OK && ret != ESP_ERR_TIMEOUT) { // Ignore timeouts
+			ESP_LOGE(__FILE__, "Error while reading magnetometer data from mpu9250");
 		}
 
 		acc[0] = (acc_raw.acc_x - acc_err.acc_x);
@@ -349,7 +352,6 @@ void attitude_worker() {
 			ESP_LOGW(__FILE__, "AHRS worker could not lock mutex");
 		}
 
-		// TODO this can only work at 12ms, not 10. Else we get ak errors
 		delay_until_ms(&last_wake_time, 10);
 	}
 }

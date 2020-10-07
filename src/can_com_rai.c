@@ -104,7 +104,6 @@ esp_err_t can_com_rai_get(can_com_rai_t *data) {
 			return ESP_OK;
 		}
 	} else {
-		// xSemaphoreGive(sumd_decoder_sem);	// TODO why do I have to give the mutex if I did not even get it?!?
 		return ESP_ERR_TIMEOUT;
 	}
 }
@@ -125,7 +124,6 @@ void can_com_rai_worker() {
 				xSemaphoreGive(can_com_rai_sem);
 			} else {
 				ESP_LOGE(__FILE__, "CAN Com Rai mutex error");
-				// xSemaphoreGive(sumd_decoder_sem);	// TODO why do I have to give the mutex if I did not even get it?!?
 			}
 		} else {
 			ESP_LOGE(__FILE__, "CAN Com Rai worker no new data");

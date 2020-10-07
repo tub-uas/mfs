@@ -99,7 +99,6 @@ esp_err_t drv_sumd_get_pwm(uint16_t pwm_dest[]) {
 			return ESP_OK;
 		}
 	} else {
-		// xSemaphoreGive(sumd_decoder_sem);	// TODO why do I have to give the mutex if I did not even get it?!?
 		return ESP_ERR_TIMEOUT;
 	}
 }
@@ -167,7 +166,6 @@ esp_err_t drv_sumd_decode() {
 		xSemaphoreGive(sumd_decoder_sem);
 	} else {
 		ESP_LOGE(__FILE__, "SUMD packet mutex error");
-		// xSemaphoreGive(sumd_decoder_sem);	// TODO why do I have to give the mutex if I did not even get it?!?
 		return ESP_ERR_TIMEOUT;
 	}
 

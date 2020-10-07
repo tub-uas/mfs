@@ -14,7 +14,7 @@
 
 #define LED_MSG_PIN 23
 
-// TODO use atomic
+// todo: use atomic
 led_state_t led_state = LED_OFF;
 
 esp_err_t drv_led_init() {

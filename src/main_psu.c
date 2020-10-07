@@ -36,7 +36,6 @@ void main_psu() {
 
 		can_com_psu_t data;
 
-		// TODO remove the error check here and use smth for runtime
 		ESP_ERROR_CHECK(drv_sense_ext_read_volt(SENSE_EXT_MAIN_ADDR, &data.sense_main_volt));
 		ESP_ERROR_CHECK(drv_sense_ext_read_curr(SENSE_EXT_MAIN_ADDR, &data.sense_main_curr));
 		ESP_ERROR_CHECK(drv_sense_ext_read_pow(SENSE_EXT_MAIN_ADDR, &data.sense_main_pow));
@@ -53,7 +52,7 @@ void main_psu() {
 		// printf("Pwr %10f %10f %10f \n", data.sense_pwr_volt, data.sense_pwr_curr, data.sense_pwr_pow);
 		// printf("sys %10f %10f %10f \n", data.sense_sys_volt, data.sense_sys_curr, data.sense_sys_pow);
 
-		// TODO do something more advanced here
+		// todo: do something more advanced here
 		if (data.sense_main_volt < 11.5 ||
 		    data.sense_pwr_volt < 4.95 ||
 		    data.sense_sys_volt < 4.95) {
@@ -66,7 +65,5 @@ void main_psu() {
 		can_com_psu_send(data);
 
 		delay_until_ms(&last_wake_time, 100);
-		// delay_ms(100);
-
 	}
 }

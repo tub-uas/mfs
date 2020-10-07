@@ -28,7 +28,7 @@ void main_ahrs() {
 
 	TickType_t last_wake_time = xTaskGetTickCount();
 
-	// TODO LED is controlled by attitude worker for now (should actually happen here)
+	// todo: LED is controlled by attitude worker for now (should actually happen here)
 	// drv_led_set(LED_ON_ALIVE);
 
 	while(1) {

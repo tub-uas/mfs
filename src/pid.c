@@ -55,7 +55,7 @@ esp_err_t pid_run(pid_ctrl_t *pid, float dt, float set, float in, float *out) {
 	// Check, when deadband active, if inside deadband
 	if (fabs(err) < pid->deadband && pid->deadband != 0.0) {
 		*out = 0.0;
-		return ESP_OK;	// TODO replace ESP_OK with indicator that deadband is active
+		return 1;
 	}
 
 	// Check for special wrap around function

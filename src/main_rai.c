@@ -76,6 +76,8 @@ void recv_rai() {
 		if (drv_sumd_get_pwm(pwm) == ESP_OK) {
 			// We have valid SUMD data
 
+			// drv_sumd_print(pwm);
+
 			if (pwm[7] > 1500) {
 				// The pilot wants control, lets give him control
 				drv_pwm_set_arr(pwm, PWM_CH_NUM);

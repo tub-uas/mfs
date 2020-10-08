@@ -12,6 +12,8 @@ esp_err_t drv_sumd_init();
 
 esp_err_t drv_sumd_get_pwm(uint16_t pwm[]);
 
+void drv_sumd_print(uint16_t pwm[]);
+
 void drv_sumd_test();
 
 #endif // DRV_SUMD_H

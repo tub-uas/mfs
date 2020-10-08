@@ -233,6 +233,13 @@ void drv_sumd_worker() {
 	ESP_LOGW(__FILE__, "SUMD driver worker stopped");
 }
 
+void drv_sumd_print(uint16_t pwm[]) {
+	for (int i=0; i<PWM_CH_NUM; i++) {
+		printf("%d:%d\t", i, pwm[i]);
+	}
+	printf("\n");
+}
+
 void drv_sumd_test() {
 
 	ESP_LOGI(__FILE__, "SUMD driver test");

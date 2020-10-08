@@ -95,7 +95,7 @@ esp_err_t can_com_rai_send(can_com_rai_t data) {
 esp_err_t can_com_rai_get(can_com_rai_t *data) {
 	if (xSemaphoreTake(can_com_rai_sem, 10 / portTICK_PERIOD_MS) == true) {
 		if (get_time_ms() > can_com_rai_valid_time + 500) {
-			ESP_LOGE(__FILE__, "CAN Com Rai could not get valid data");
+			// ESP_LOGE(__FILE__, "CAN Com Rai could not get valid data");
 			xSemaphoreGive(can_com_rai_sem);
 			return ESP_FAIL;
 		} else {
@@ -140,7 +140,7 @@ esp_err_t can_com_rai_recv(can_com_rai_t *data) {
 		can_message_t message;
 
 		if (can_receive(&message, pdMS_TO_TICKS(50)) != ESP_OK) {
-			ESP_LOGE(__FILE__, "No CAN message received");
+			// ESP_LOGE(__FILE__, "No CAN message received");
 			return ESP_FAIL;
 
 		} else {

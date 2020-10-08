@@ -102,28 +102,23 @@ void recv_rai() {
 					drv_pwm_set_arr(pwm, PWM_CH_NUM);
 					drv_led_set(LED_FAST);
 
-					ESP_LOGE(__FILE__, "Pilot control, no CAN data");
+					ESP_LOGW(__FILE__, "Pilot control, no CAN data");
 				}
 			}
 		} else {
 			// We do not have valid SUMD data
 
-			if (can_com_rai_get(&data) == ESP_OK) {
+			// if (can_com_rai_get(&data) == ESP_OK) {
 
 				// Since we have valid CAN data, lets use that instead
 				// Still this is an error
 
-				// We can note yet trust the rapsi. Therefore switch to general
-				// failsafe mode.
-				goto FAILSAFE;
 				// drv_pwm_set_arr(data.chnl, PWM_CH_NUM);
 				// drv_led_set(LED_FAST);
 				// ESP_LOGE(__FILE__, "RPI control, no PWM data");
 
-			} else {
+			// } else {
 				// We also dont have valid CAN data
-
-				FAILSAFE:
 
 				// Lets turn the motor off and put the plane into a right turn
 				pwm[0] = 900;
@@ -140,11 +135,8 @@ void recv_rai() {
 				drv_led_set(LED_FAST);
 
 				ESP_LOGE(__FILE__, "FAILSAFE");
-			}
+			// }
 		}
-
-		// printf("data.time: %f ", data.time);
-		// printf("idata.chnl[0]: %u \n", data.chnl[0]);
 
 		delay_until_ms(&last_wake_time, 10);
 	}

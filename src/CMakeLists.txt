@@ -10,6 +10,7 @@ set(app_sources
 	"drv_bmp280.c"
 	"drv_button.c"
 	"drv_can.c"
+	"drv_gps.c"
 	"drv_i2c.c"
 	"drv_led.c"
 	"drv_mpu9250.c"

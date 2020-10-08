@@ -180,7 +180,6 @@ void drv_sumd_worker() {
 
 		uart_event_t event;
 		if (xQueueReceive(uart_event_queue, (void*)&event, 100/portTICK_PERIOD_MS)) {
-		// if (xQueueReceive(uart_event_queue, (void*)&event, (portTickType)portMAX_DELAY)) {
 
 			switch (event.type) {
 				case UART_DATA:

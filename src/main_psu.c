@@ -51,8 +51,10 @@ void main_psu() {
 		if (data.sense_main_volt < 11.5 ||
 		    data.sense_pwr_volt < 4.95 ||
 		    data.sense_sys_volt < 4.95) {
+
 			drv_led_set(LED_FAST);
 			printf("Main %10f Pwr %10f Sys %10f \n", data.sense_main_volt, data.sense_pwr_volt, data.sense_sys_volt);
+
 		} else {
 			drv_led_set(LED_ON_ALIVE);
 		}

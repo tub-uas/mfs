@@ -14,6 +14,7 @@ set(app_sources
 	"drv_i2c.c"
 	"drv_led.c"
 	"drv_mpu9250.c"
+	"drv_nema_parser.c"
 	"drv_nema.c"
 	"drv_pwm.c"
 	"drv_sense_ext.c"

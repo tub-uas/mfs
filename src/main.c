@@ -26,6 +26,7 @@
 #include "drv_mpu_regs.h"
 #include "drv_mpu9250.h"
 #include "drv_nema.h"
+#include "drv_nema_parser.h"
 #include "drv_pwm.h"
 #include "drv_sense_ext.h"
 #include "drv_sense.h"
@@ -79,12 +80,7 @@ void app_main() {
 		ESP_ERROR_CHECK(drv_led_init());
 		ESP_ERROR_CHECK(drv_button_init());
 		ESP_ERROR_CHECK(drv_sense_init());
-		ESP_ERROR_CHECK(drv_nema_init());
-		// ESP_ERROR_CHECK(drv_mpu9250_init());
-		// ESP_ERROR_CHECK(drv_ak8963_init());
-		// ESP_ERROR_CHECK(drv_bmp280_init());
-		// ESP_ERROR_CHECK(can_com_ahrs_init());
-		// ESP_ERROR_CHECK(attitude_init());
+		// ESP_ERROR_CHECK(drv_nema_init());
 
 	#endif
 
@@ -101,8 +97,8 @@ void app_main() {
 		xTaskCreate(main_ahrs, "main_ahrs", 4096, NULL, 5, NULL);
 
 	#elif defined(GPS_BOARD)
-		// xTaskCreate(main_gps, "main_gps", 4096, NULL, 5, NULL);
-		xTaskCreate(drv_nema_test, "drv_nema_test", 4096, NULL, 5, NULL);
+		xTaskCreate(main_gps, "main_gps", 4096, NULL, 5, NULL);
+		// xTaskCreate(drv_nema_test, "drv_nema_test", 4096, NULL, 5, NULL);
 
 	#endif
 

@@ -17,6 +17,7 @@
 #define RAI_GEN1    0xbf10666c
 #define PSU_GEN1    0xbf106be0
 #define AHRS_GEN1   0xbf106614
+#define GPS_GEN1    0xbf106688
 
 #if defined(RAI_BOARD)
 	uint32_t valid_ids[NUM_GENS] = {RAI_GEN1};
@@ -27,6 +28,9 @@
 #elif defined(AHRS_BOARD)
 	uint32_t valid_ids[NUM_GENS] = {AHRS_GEN1};
 	#define BOARD_NAME "AHRS"
+#elif defined(GPS_BOARD)
+	uint32_t valid_ids[NUM_GENS] = {GPS_GEN1};
+	#define BOARD_NAME "GPS"
 #else
 	#error "Unkown board type"
 #endif

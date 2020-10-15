@@ -25,11 +25,13 @@
 #include "drv_led.h"
 #include "drv_mpu_regs.h"
 #include "drv_mpu9250.h"
+#include "drv_nema.h"
 #include "drv_pwm.h"
 #include "drv_sense_ext.h"
 #include "drv_sense.h"
 #include "drv_sumd.h"
 #include "main_ahrs.h"
+#include "main_gps.h"
 #include "main_psu.h"
 #include "main_rai.h"
 #include "pid.h"
@@ -43,7 +45,7 @@ void app_main() {
 
 	ESP_LOGI(__FILE__, "================= Starting System =================");
 
-	ESP_ERROR_CHECK(board_check());
+	// ESP_ERROR_CHECK(board_check());
 
 	#if defined(RAI_BOARD)
 		ESP_LOGI(__FILE__, "Board type is RAI");
@@ -72,6 +74,18 @@ void app_main() {
 		ESP_ERROR_CHECK(can_com_ahrs_init());
 		ESP_ERROR_CHECK(attitude_init());
 
+	#elif defined(GPS_BOARD)
+		ESP_LOGI(__FILE__, "Board type is GPS");
+		ESP_ERROR_CHECK(drv_led_init());
+		ESP_ERROR_CHECK(drv_button_init());
+		ESP_ERROR_CHECK(drv_sense_init());
+		ESP_ERROR_CHECK(drv_nema_init());
+		// ESP_ERROR_CHECK(drv_mpu9250_init());
+		// ESP_ERROR_CHECK(drv_ak8963_init());
+		// ESP_ERROR_CHECK(drv_bmp280_init());
+		// ESP_ERROR_CHECK(can_com_ahrs_init());
+		// ESP_ERROR_CHECK(attitude_init());
+
 	#endif
 
 	ESP_LOGI(__FILE__, "=========== System Started Successfully ===========");
@@ -80,14 +94,15 @@ void app_main() {
 		xTaskCreate(send_rai, "send_rai", 4096, NULL, 5, NULL);
 		xTaskCreate(recv_rai, "recv_rai", 4096, NULL, 5, NULL);
 
-
 	#elif defined(PSU_BOARD)
 		xTaskCreate(main_psu, "main_psu", 4096, NULL, 5, NULL);
-
 
 	#elif defined(AHRS_BOARD)
 		xTaskCreate(main_ahrs, "main_ahrs", 4096, NULL, 5, NULL);
 
+	#elif defined(GPS_BOARD)
+		// xTaskCreate(main_gps, "main_gps", 4096, NULL, 5, NULL);
+		xTaskCreate(drv_nema_test, "drv_nema_test", 4096, NULL, 5, NULL);
 
 	#endif
 

@@ -98,7 +98,8 @@ void app_main() {
 		xTaskCreate(main_ahrs, "main_ahrs", 4096, NULL, 5, NULL);
 
 	#elif defined(GPS_BOARD)
-		xTaskCreate(main_gps, "main_gps", 4096, NULL, 5, NULL);
+		// xTaskCreate(main_gps, "main_gps", 4096, NULL, 5, NULL);
+		xTaskCreate(main_gps_compass, "main_gps_compass", 4096, NULL, 5, NULL);
 		// xTaskCreate(drv_nema_test, "drv_nema_test", 4096, NULL, 5, NULL);
 
 	#endif

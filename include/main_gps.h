@@ -7,4 +7,6 @@
 
 void main_gps();
 
+void main_gps_compass();
+
 #endif // MAIN_GPS_H

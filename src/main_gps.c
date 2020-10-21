@@ -13,6 +13,7 @@
 #include "drv_nmea.h"
 #include "drv_hmc5883.h"
 #include "drv_led.h"
+#include "can_com_gps.h"
 
 #define TIME_ZONE (+2)   // Berlin
 
@@ -129,5 +130,32 @@ void main_gps() {
 	nmea_parser_remove_handler(nmea_hdl, gps_event_handler);
 	/* deinit NMEA parser library */
 	nmea_parser_deinit(nmea_hdl);
+
+}
+
+void main_gps_compass() {
+
+	ESP_LOGI(__FILE__, "Running main_gps_compass");
+
+	TickType_t last_wake_time = xTaskGetTickCount();
+
+	drv_hmc5883_init();
+
+	printf("init done\n");
+
+	while (1) {
+
+		if (get_time_ms() < last_valid_sample_time + 2000) {
+			drv_led_set(LED_ON_ALIVE);
+		} else {
+			drv_led_set(LED_FAST);
+		}
+
+		delay_until_ms(&last_wake_time, 100);
+	}
+
+	// If we get here, something went badly wrong. Reset the system
+	// TODO set the failsafe mode
+	esp_restart();
 
 }

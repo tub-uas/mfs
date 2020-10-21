@@ -11,6 +11,7 @@
 #include "attitude_estimation.h"
 #include "board.h"
 #include "can_com_ahrs.h"
+#include "can_com_gps.h"
 #include "can_com_psu.h"
 #include "can_com_rai.h"
 #include "can_ids.h"
@@ -79,6 +80,7 @@ void app_main() {
 		ESP_ERROR_CHECK(drv_led_init());
 		ESP_ERROR_CHECK(drv_button_init());
 		ESP_ERROR_CHECK(drv_sense_init());
+		ESP_ERROR_CHECK(can_com_gps_init());
 		// ESP_ERROR_CHECK(drv_nema_init());
 
 	#endif

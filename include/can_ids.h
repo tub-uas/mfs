@@ -56,8 +56,14 @@
 #define CAN_ID_AIR_DATA2     0x2C2
 
 
-
 /****************** GPS ******************/
+#define CAN_ID_GPS_DATA0     0x330
+#define CAN_ID_GPS_DATA1     0x331
+#define CAN_ID_GPS_DATA2     0x332
+#define CAN_ID_GPS_DATA3     0x333
+#define CAN_ID_GPS_DATA4     0x334
+#define CAN_ID_GPS_DATA5     0x335
+#define CAN_ID_GPS_DATA6     0x336
 
 
 /****************** PSU ******************/

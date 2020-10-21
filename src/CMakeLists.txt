@@ -4,6 +4,7 @@ set(app_sources
 	"attitude_estimation.c"
 	"board.c"
 	"can_com_ahrs.c"
+	"can_com_gps.c"
 	"can_com_rai.c"
 	"can_com_psu.c"
 	"drv_ak8963.c"

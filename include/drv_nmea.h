@@ -16,7 +16,7 @@ extern "C" {
 ESP_EVENT_DECLARE_BASE(ESP_NMEA_EVENT);
 
 typedef enum {
-	GPS_FIX_INVALID, /*!< Not fixed */
+	GPS_FIX_INVALID = 0, /*!< Not fixed */
 	GPS_FIX_GPS,     /*!< GPS */
 	GPS_FIX_DGPS,    /*!< Differential GPS */
 } gps_fix_t;
@@ -82,6 +82,7 @@ typedef struct {
 	struct {
 		uart_port_t uart_port;        /*!< UART port number */
 		uint32_t rx_pin;              /*!< UART Rx Pin number */
+		uint32_t tx_pin;              /*!< UART Tx Pin number */
 		uint32_t baud_rate;           /*!< UART baud rate */
 		uart_word_length_t data_bits; /*!< UART data bits length */
 		uart_parity_t parity;         /*!< UART parity */
@@ -98,6 +99,7 @@ typedef void *nmea_parser_handle_t;
 		.uart = {                          \
 			.uart_port = UART_NUM_1,       \
 			.rx_pin = 26,                  \
+			.tx_pin = 27,                  \
 			.baud_rate = 9600,             \
 			.data_bits = UART_DATA_8_BITS, \
 			.parity = UART_PARITY_DISABLE, \

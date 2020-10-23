@@ -36,6 +36,7 @@ esp_err_t can_com_gps_send(can_com_gps_t data) {
 		return ESP_FAIL;
 	}
 
+	message.data_length_code = 7;
 	message.identifier = CAN_ID_GPS_DATA1;
 	memcpy(&message.data[0], &data.second, sizeof(uint8_t));
 	memcpy(&message.data[1], &data.minute, sizeof(uint8_t));
@@ -49,6 +50,7 @@ esp_err_t can_com_gps_send(can_com_gps_t data) {
 		return ESP_FAIL;
 	}
 
+	message.data_length_code = 5;
 	message.identifier = CAN_ID_GPS_DATA2;
 	memcpy(&message.data[0], &data.fix, sizeof(uint8_t));
 	memcpy(&message.data[1], &data.fix_mode, sizeof(uint8_t));
@@ -61,6 +63,7 @@ esp_err_t can_com_gps_send(can_com_gps_t data) {
 		return ESP_FAIL;
 	}
 
+	message.data_length_code = 8;
 	message.identifier = CAN_ID_GPS_DATA3;
 	memcpy(&message.data[0], &data.latitude, sizeof(float));
 	memcpy(&message.data[4], &data.longitude, sizeof(float));
@@ -91,6 +94,24 @@ esp_err_t can_com_gps_send(can_com_gps_t data) {
 	message.identifier = CAN_ID_GPS_DATA6;
 	memcpy(&message.data[0], &data.dop_v, sizeof(float));
 	memcpy(&message.data[4], &data.variation, sizeof(float));
+	if (can_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
+		ESP_LOGW(__FILE__, "Failed to queue CAN message for transmission, id: 0x%x",
+		         message.identifier);
+		return ESP_FAIL;
+	}
+
+	message.identifier = CAN_ID_GPS_DATA7;
+	memcpy(&message.data[0], &data.mag_x, sizeof(float));
+	memcpy(&message.data[4], &data.mag_y, sizeof(float));
+	if (can_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
+		ESP_LOGW(__FILE__, "Failed to queue CAN message for transmission, id: 0x%x",
+		         message.identifier);
+		return ESP_FAIL;
+	}
+
+	message.data_length_code = 4;
+	message.identifier = CAN_ID_GPS_DATA8;
+	memcpy(&message.data[0], &data.mag_z, sizeof(float));
 	if (can_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
 		ESP_LOGW(__FILE__, "Failed to queue CAN message for transmission, id: 0x%x",
 		         message.identifier);

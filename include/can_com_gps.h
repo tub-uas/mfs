@@ -26,6 +26,9 @@ typedef struct {
 	float dop_p;
 	float dop_v;
 	float variation;
+	float mag_x;
+	float mag_y;
+	float mag_z;
 	uint8_t valid;
 } can_com_gps_t;
 

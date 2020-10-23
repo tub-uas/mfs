@@ -79,3 +79,14 @@ esp_err_t drv_i2c_write_bytes(i2c_device_t dev, uint8_t reg, uint8_t len, uint8_
 
 	return ret;
 }
+
+esp_err_t drv_i2c_update_byte(i2c_device_t dev, uint8_t reg, uint8_t mask, uint8_t val) {
+
+	uint8_t old;
+	esp_err_t ret = drv_i2c_read_bytes(dev, reg, 1, &old);
+
+	if (ret != ESP_OK)
+		return ret;
+	else
+		return drv_i2c_write_bytes(dev, reg, 1, (old & mask) | val);
+}

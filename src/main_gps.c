@@ -23,7 +23,12 @@ static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_ba
 	gps_t *gps = NULL;
 	switch (event_id) {
 		case GPS_UPDATE:
+
 			gps = (gps_t *)event_data;
+
+			drv_hmc5883_data_t compass_data;
+			memset(&compass_data, 0, sizeof(compass_data));
+			drv_hmc5883_get_data(&compass_data);
 
 			printf("\n--- %d/%d/%d %d:%d:%d ---\n"
 			       "latitude     = %.07fN\n"
@@ -39,7 +44,10 @@ static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_ba
 			       "dop_v        = %f\n"
 			       "variation    = %f\n"
 			       "cog          = %f\n"
-			       "valid        = %d\n",
+			       "valid        = %d\n"
+			       "compass_x    = %f\n"
+			       "compass_y    = %f\n"
+			       "compass_z    = %f\n",
 			       gps->date.year + 2000, gps->date.month, gps->date.day,
 			       gps->tim.hour + TIME_ZONE, gps->tim.minute, gps->tim.second,
 			       gps->latitude,
@@ -55,7 +63,10 @@ static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_ba
 			       gps->dop_v,
 			       gps->variation,
 			       gps->cog,
-			       gps->valid);
+			       gps->valid,
+			       compass_data.x,
+			       compass_data.y,
+			       compass_data.z);
 
 			can_com_gps_t data;
 			memset(&data, 0, sizeof(data));
@@ -80,6 +91,9 @@ static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_ba
 			data.dop_v = gps->dop_v;
 			data.variation = gps->variation;
 			data.valid = gps->valid;
+			data.mag_x = compass_data.x;
+			data.mag_y = compass_data.y;
+			data.mag_z = compass_data.z;
 
 			can_com_gps_send(data);
 
@@ -109,6 +123,8 @@ void main_gps() {
 	/* register event handler for NMEA parser library */
 	ESP_ERROR_CHECK(nmea_parser_add_handler(nmea_hdl, gps_event_handler, NULL));
 
+	ESP_ERROR_CHECK(drv_hmc5883_init());
+
 	TickType_t last_wake_time = xTaskGetTickCount();
 
 	while (1) {
@@ -130,32 +146,5 @@ void main_gps() {
 	nmea_parser_remove_handler(nmea_hdl, gps_event_handler);
 	/* deinit NMEA parser library */
 	nmea_parser_deinit(nmea_hdl);
-
-}
-
-void main_gps_compass() {
-
-	ESP_LOGI(__FILE__, "Running main_gps_compass");
-
-	TickType_t last_wake_time = xTaskGetTickCount();
-
-	drv_hmc5883_init();
-
-	printf("init done\n");
-
-	while (1) {
-
-		if (get_time_ms() < last_valid_sample_time + 2000) {
-			drv_led_set(LED_ON_ALIVE);
-		} else {
-			drv_led_set(LED_FAST);
-		}
-
-		delay_until_ms(&last_wake_time, 100);
-	}
-
-	// If we get here, something went badly wrong. Reset the system
-	// TODO set the failsafe mode
-	esp_restart();
 
 }

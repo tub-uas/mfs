@@ -16,9 +16,21 @@
 #include "board.h"
 #include "util.h"
 
+static const float gain_values [] = {
+	[HMC5883L_GAIN_1370] = 0.73,
+	[HMC5883L_GAIN_1090] = 0.92,
+	[HMC5883L_GAIN_820]  = 1.22,
+	[HMC5883L_GAIN_660]  = 1.52,
+	[HMC5883L_GAIN_440]  = 2.27,
+	[HMC5883L_GAIN_390]  = 2.56,
+	[HMC5883L_GAIN_330]  = 3.03,
+	[HMC5883L_GAIN_230]  = 4.35
+};
+
 static i2c_device_t hmc5883;
-hmc5883l_opmode_t opmode;
-float gain;
+drv_hmc5883_opmode_t opmode;
+float gain = gain_values[HMC5883L_GAIN_1090];
+
 
 esp_err_t drv_hmc5883_init() {
 
@@ -35,6 +47,26 @@ esp_err_t drv_hmc5883_init() {
 		ESP_LOGE(__FILE__,"HMC5883 not found");
 		return ESP_FAIL;
 	}
+	uint8_t val = 0;
+	drv_i2c_read_bytes(hmc5883, REG_MODE, 1, &val);
+
+	printf("mode: %x \n", val);
+
+	// drv_hmc5883_gain_t gain_tmp = 0;
+	// drv_hmc5883_get_gain(&gain_tmp);
+	// gain = gain_values[gain_tmp];
+	//
+	// drv_hmc5883_get_opmode(&opmode);
+	//
+	// printf("gain: %f \n", gain);
+	// printf("opmode: %d \n", opmode);
+	//
+	// drv_hmc5883_set_opmode(HMC5883L_MODE_SINGLE);
+	//
+	// drv_hmc5883_get_opmode(&opmode);
+	//
+	// printf("gain: %f \n", gain);
+	// printf("opmode2: %d \n", opmode);
 
 	return ret_hmc5883;
 }
@@ -53,195 +85,108 @@ esp_err_t drv_hmc5883_ping() {
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_init(hmc5883l_dev_t *dev)
-{
-	CHECK_ARG(dev);
+esp_err_t drv_hmc5883_get_opmode(drv_hmc5883_opmode_t *val) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
+	drv_i2c_read_bytes(hmc5883, REG_MODE, 1, (uint8_t *)val);
 
-	uint32_t id = 0;
-	I2C_DEV_CHECK(&dev->i2c_dev, i2c_dev_read_reg(&dev->i2c_dev, REG_ID_A, &id, 3));
-	if (id != HMC5883L_ID)
-	{
-		I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
-		ESP_LOGE(TAG, "Unknown ID: 0x%08x != 0x%08x", id, HMC5883L_ID);
-		return ESP_ERR_NOT_FOUND;
-	}
-
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
-
-	hmc5883l_gain_t gain;
-	hmc5883l_get_gain(dev, &gain)
-	dev->gain = gain_values[gain];
-
-	CHECK(hmc5883l_get_opmode(dev, &dev->opmode));
-
-	return ESP_OK;
-}
-
-esp_err_t hmc5883l_get_opmode(hmc5883l_dev_t *dev, hmc5883l_opmode_t *val)
-{
-	CHECK_ARG(dev && val);
-
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev, REG_MODE, (uint8_t *)val));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	printf("opmode raw %d \n", *val & MASK_MD);
 
 	*val = (*val & MASK_MD) == 0 ? HMC5883L_MODE_CONTINUOUS : HMC5883L_MODE_SINGLE;
+
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_set_opmode(hmc5883l_dev_t *dev, hmc5883l_opmode_t mode)
-{
-	CHECK_ARG(dev);
+esp_err_t drv_hmc5883_set_opmode(drv_hmc5883_opmode_t mode) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, write_register(dev, REG_MODE, mode));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_write_bytes(hmc5883, REG_MODE, 1, mode);
 
-	dev->opmode = mode;
+	opmode = mode;
+
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_get_samples_averaged(hmc5883l_dev_t *dev, hmc5883l_samples_averaged_t *val)
-{
-	CHECK_ARG(dev && val);
+esp_err_t drv_hmc5883_get_samples_averaged(drv_hmc5883_samples_averaged_t *val) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev, REG_CR_A, (uint8_t *)val));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_read_bytes(hmc5883, REG_CR_A, 1, (uint8_t *)val);
 
 	*val = (*val & MASK_MA) >> BIT_MA;
-	return ESP_OK;
-}
-
-esp_err_t hmc5883l_set_samples_averaged(hmc5883l_dev_t *dev, hmc5883l_samples_averaged_t samples)
-{
-	CHECK_ARG(dev);
-
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, update_register(dev, REG_CR_A, MASK_MA, samples << BIT_MA));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
 
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_get_data_rate(hmc5883l_dev_t *dev, hmc5883l_data_rate_t *val)
-{
-	CHECK_ARG(dev && val);
+esp_err_t drv_hmc5883_set_samples_averaged(drv_hmc5883_samples_averaged_t samples) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev, REG_CR_A, (uint8_t *)val));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_update_byte(hmc5883, REG_CR_A, MASK_MA, samples << BIT_MA);
+
+	return ESP_OK;
+}
+
+esp_err_t drv_hmc5883_get_data_rate(drv_hmc5883_data_rate_t *val) {
+
+	drv_i2c_read_bytes(hmc5883, REG_CR_A, 1, (uint8_t *)val);
 
 	*val = (*val & MASK_DO) >> BIT_DO;
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_set_data_rate(hmc5883l_dev_t *dev, hmc5883l_data_rate_t rate)
-{
-	CHECK_ARG(dev);
+esp_err_t drv_hmc5883_set_data_rate(drv_hmc5883_data_rate_t rate) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, update_register(dev, REG_CR_A, MASK_DO, rate << BIT_DO));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_update_byte(hmc5883, REG_CR_A, MASK_DO, rate << BIT_DO);
 
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_get_bias(hmc5883l_dev_t *dev, hmc5883l_bias_t *val)
-{
-	CHECK_ARG(dev && val);
+esp_err_t drv_hmc5883_get_bias(drv_hmc5883_bias_t *val) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev, REG_CR_A, (uint8_t *)val));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_read_bytes(hmc5883, REG_CR_A, 1, (uint8_t *)val);
 
 	*val &= MASK_MS;
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_set_bias(hmc5883l_dev_t *dev, hmc5883l_bias_t bias)
-{
-	CHECK_ARG(dev);
+esp_err_t drv_hmc5883_set_bias(drv_hmc5883_bias_t bias) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, update_register(dev, REG_CR_A, MASK_MS, bias));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_update_byte(hmc5883, REG_CR_A, MASK_MS, bias);
 
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_get_gain(hmc5883l_dev_t *dev, hmc5883l_gain_t *val)
-{
-	CHECK_ARG(dev && val);
+esp_err_t drv_hmc5883_get_gain(drv_hmc5883_gain_t *val) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev, REG_CR_B, (uint8_t *)val));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_read_bytes(hmc5883, REG_CR_B, 1, (uint8_t *)val);
 
 	*val >>= BIT_GN;
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_set_gain(hmc5883l_dev_t *dev, hmc5883l_gain_t gain)
-{
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, write_register(dev, REG_CR_B, gain << BIT_GN));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+esp_err_t drv_hmc5883_set_gain(drv_hmc5883_gain_t gain) {
+	drv_i2c_write_bytes(hmc5883, REG_CR_B, 1, gain << BIT_GN);
 
-	dev->gain = gain_values[gain];
+	gain = gain_values[gain];
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_data_is_locked(hmc5883l_dev_t *dev, bool *val)
-{
-	CHECK_ARG(dev && val);
+esp_err_t drv_hmc5883_data_is_locked(uint8_t *val) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev, REG_STAT, (uint8_t *)val));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_read_bytes(hmc5883, REG_STAT, 1, (uint8_t *)val);
 
 	*val &= MASK_DL;
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_data_is_ready(hmc5883l_dev_t *dev, bool *val)
-{
-	CHECK_ARG(dev && val);
+esp_err_t drv_hmc5883_data_is_ready(uint8_t *val) {
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, read_register(dev, REG_STAT, (uint8_t *)val));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_read_bytes(hmc5883, REG_STAT, 1, (uint8_t *)val);
 
 	*val &= MASK_DR;
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_get_raw_data(hmc5883l_dev_t *dev, hmc5883l_raw_data_t *data)
-{
-	CHECK_ARG(dev && data);
+esp_err_t drv_hmc5883_get_raw_data(drv_hmc5883_raw_data_t *data) {
 
-	if (dev->opmode == HMC5883L_MODE_SINGLE)
-	{
-		// overwrite mode register for measurement
-		CHECK(hmc5883l_set_opmode(dev, dev->opmode));
-		// wait for data
-		uint64_t start = esp_timer_get_time();
-		bool dready = false;
-		do
-		{
-			CHECK(hmc5883l_data_is_ready(dev, &dready));
-			if (timeout_expired(start, CONFIG_HMC5883L_MEAS_TIMEOUT))
-				return ESP_ERR_TIMEOUT;
-		} while (!dready);
-	}
 	uint8_t buf[6];
-	uint8_t reg = REG_DX_H;
 
-	I2C_DEV_TAKE_MUTEX(&dev->i2c_dev);
-	I2C_DEV_CHECK(&dev->i2c_dev, i2c_dev_read_reg(&dev->i2c_dev, reg, buf, 6));
-	I2C_DEV_GIVE_MUTEX(&dev->i2c_dev);
+	drv_i2c_read_bytes(hmc5883, REG_DX_H, 6, buf);
 
 	data->x = ((int16_t)buf[REG_DX_H - REG_DX_H] << 8) | buf[REG_DX_L - REG_DX_H];
 	data->y = ((int16_t)buf[REG_DY_H - REG_DX_H] << 8) | buf[REG_DY_L - REG_DX_H];
@@ -250,25 +195,21 @@ esp_err_t hmc5883l_get_raw_data(hmc5883l_dev_t *dev, hmc5883l_raw_data_t *data)
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_raw_to_mg(const hmc5883l_dev_t *dev, const hmc5883l_raw_data_t *raw, hmc5883l_data_t *mg)
-{
-	CHECK_ARG(dev && raw && mg);
-
-	mg->x = raw->x * dev->gain;
-	mg->y = raw->y * dev->gain;
-	mg->z = raw->z * dev->gain;
+/* raw to gauss */
+esp_err_t drv_hmc5883_raw_to_mg(drv_hmc5883_raw_data_t raw, drv_hmc5883_data_t *mg) {
+	mg->x = raw.x * gain * 0.001;
+	mg->y = raw.y * gain * 0.001;
+	mg->z = raw.z * gain * 0.001;
 
 	return ESP_OK;
 }
 
-esp_err_t hmc5883l_get_data(hmc5883l_dev_t *dev, hmc5883l_data_t *data)
-{
-	CHECK_ARG(data);
+esp_err_t drv_hmc5883_get_data(drv_hmc5883_data_t *data) {
 
-	hmc5883l_raw_data_t raw;
+	drv_hmc5883_raw_data_t raw;
 
-	CHECK(hmc5883l_get_raw_data(dev, &raw));
-	CHECK(hmc5883l_raw_to_mg(dev, &raw, data));
+	esp_err_t ret = drv_hmc5883_get_raw_data(&raw);
+	drv_hmc5883_raw_to_mg(raw, data);
 
-	return ESP_OK;
+	return ret;
 }

@@ -22,7 +22,7 @@
 #define CAN_META_AIR_MSG_NUM 3
 
 /****************** GPS ******************/
-
+#define CAN_META_GPS_MSG_NUM 9
 
 /****************** PSU ******************/
 #define CAN_META_PSU_MSG_NUM 5

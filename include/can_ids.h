@@ -64,6 +64,8 @@
 #define CAN_ID_GPS_DATA4     0x334
 #define CAN_ID_GPS_DATA5     0x335
 #define CAN_ID_GPS_DATA6     0x336
+#define CAN_ID_GPS_DATA7     0x337
+#define CAN_ID_GPS_DATA8     0x338
 
 
 /****************** PSU ******************/

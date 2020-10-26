@@ -142,7 +142,6 @@ esp_err_t drv_pwm_set_arr(uint16_t chnl[], uint32_t len) {
 	return ret;
 }
 
-
 esp_err_t drv_pwm_output(pwm_output_t status) {
 	return gpio_set_level(PWM_EN_PIN, status);
 }
@@ -176,8 +175,6 @@ void drv_pwm_test() {
 		// drv_pwm_set(PWM_CH_UARTRX, 1200);
 		// drv_pwm_set(PWM_CH_UARTTX, 1400);
 
-		
 		delay_ms(50);
 	}
-
 }

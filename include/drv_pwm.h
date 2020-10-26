@@ -16,7 +16,6 @@
 // #define ENABLE_PWM_UARTRX
 // #define ENABLE_PWM_UARTTX
 
-
 typedef enum {
 	PWM_DISABLE = 0,
 	PWM_ENABLE
@@ -35,7 +34,6 @@ typedef enum {
 	PWM_CH_UARTRX,
 	PWM_CH_UARTTX
 } pwm_ch_t;
-
 
 esp_err_t drv_pwm_init();
 

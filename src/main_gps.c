@@ -84,6 +84,7 @@ static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_ba
 			data.sats_in_use = gps->sats_in_use;
 			data.latitude = gps->latitude;
 			data.longitude = gps->longitude;
+			data.altitude = gps->altitude;
 			data.speed = gps->speed;
 			data.cog = gps->cog;
 			data.dop_h = gps->dop_h;

@@ -95,7 +95,6 @@ esp_err_t can_com_rai_send(can_com_rai_t data) {
 esp_err_t can_com_rai_get(can_com_rai_t *data) {
 	if (xSemaphoreTake(can_com_rai_sem, 10 / portTICK_PERIOD_MS) == true) {
 		if (get_time_ms() > can_com_rai_valid_time + 500) {
-			// ESP_LOGE(__FILE__, "CAN Com Rai could not get valid data");
 			xSemaphoreGive(can_com_rai_sem);
 			return ESP_FAIL;
 		} else {
@@ -140,17 +139,9 @@ esp_err_t can_com_rai_recv(can_com_rai_t *data) {
 		can_message_t message;
 
 		if (can_receive(&message, pdMS_TO_TICKS(50)) != ESP_OK) {
-			// ESP_LOGE(__FILE__, "No CAN message received");
 			return ESP_FAIL;
 
 		} else {
-
-			// printf("Received CAN Message, id: %u, dlc: %d, data: %x %x %x %x %x %x %x %x \n",
-			//        message.identifier, message.data_length_code,
-			//        message.data[0], message.data[1], message.data[2], message.data[3],
-			//        message.data[4], message.data[5], message.data[6], message.data[7]);
-
-			// printf("Recv id: %x\n", message.identifier);
 
 			if (message.identifier != in_ids[i]) {
 				ESP_LOGE(__FILE__, "Recv: CAN id should be %x but is %x", in_ids[i], message.identifier);

@@ -20,25 +20,16 @@
 #include "drv_sumd.h"
 #include "util.h"
 
-
 void send_rai() {
 
 	ESP_LOGI(__FILE__, "Running send_rai");
 
 	TickType_t last_wake_time = xTaskGetTickCount();
 
-	// todo: LED is controlled by recv worker for now (should also happen here)
-	// drv_led_set(LED_ON_ALIVE);
-
 	while (1) {
 
 		uint16_t pwm[SUMD_CHNL_NUM] = {0};
 		if (drv_sumd_get_pwm(pwm) == ESP_OK) {
-
-			// for (uint32_t i=0; i<SUMD_CHNL_NUM; i++) {
-			// 	printf("%d:%d  ", i, pwm[i]);
-			// }
-			// printf("\n");
 
 			can_com_rai_t data;
 			memcpy(&data.chnl[0], pwm, SUMD_CHNL_NUM * sizeof(uint16_t));

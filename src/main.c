@@ -42,31 +42,32 @@
 
 void app_main() {
 
-	delay_ms(100);
+	/* Let the system settle down */
+	delay_ms(10);
 
 	ESP_LOGI(__FILE__, "================= Starting System =================");
 
-	// ESP_ERROR_CHECK(board_check());
+	ESP_ERROR_CHECK(board_check());
 
 	#if defined(RAI_BOARD)
 		ESP_LOGI(__FILE__, "Board type is RAI");
-		ESP_ERROR_CHECK(drv_led_init());
+		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
 		ESP_ERROR_CHECK(drv_button_init());
 		ESP_ERROR_CHECK(drv_sense_init());
 		ESP_ERROR_CHECK(drv_pwm_init());
-		ESP_ERROR_CHECK(drv_sumd_init());
+		ESP_ERROR_CHECK(drv_sumd_init()); /* Starts SUMD worker */
 		ESP_ERROR_CHECK(can_com_rai_init());
 
 	#elif defined(PSU_BOARD)
 		ESP_LOGI(__FILE__, "Board type is PSU");
-		ESP_ERROR_CHECK(drv_led_init());
+		ESP_ERROR_CHECK(drv_led_init());  /* Starts LED worker */
 		ESP_ERROR_CHECK(drv_button_init());
 		ESP_ERROR_CHECK(drv_sense_ext_init());
 		ESP_ERROR_CHECK(can_com_psu_init());
 
 	#elif defined(AHRS_BOARD)
 		ESP_LOGI(__FILE__, "Board type is AHRS");
-		ESP_ERROR_CHECK(drv_led_init());
+		ESP_ERROR_CHECK(drv_led_init());  /* Starts LED worker */
 		ESP_ERROR_CHECK(drv_button_init());
 		ESP_ERROR_CHECK(drv_sense_init());
 		ESP_ERROR_CHECK(drv_mpu9250_init());
@@ -77,7 +78,7 @@ void app_main() {
 
 	#elif defined(GPS_BOARD)
 		ESP_LOGI(__FILE__, "Board type is GPS");
-		ESP_ERROR_CHECK(drv_led_init());
+		ESP_ERROR_CHECK(drv_led_init());  /* Starts LED worker */
 		ESP_ERROR_CHECK(drv_button_init());
 		ESP_ERROR_CHECK(drv_sense_init());
 		ESP_ERROR_CHECK(can_com_gps_init());
@@ -101,19 +102,5 @@ void app_main() {
 
 	#endif
 
-	// xTaskCreate(attitude_test, "attitude_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_ak8963_test, "drv_ak8963_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_bmp280_test, "drv_bmp280_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_button_test, "drv_button_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_can_test, "drv_can_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_mpu9250_test, "drv_mpu9250_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_led_test, "drv_led_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_pwm_test, "drv_pwm_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_sense_ext_test, "drv_sense_ext_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_sense_test, "drv_sense_test", 4096, NULL, 5, NULL);
-	// xTaskCreate(drv_sumd_test, "drv_sumd_test", 4096, NULL, 5, NULL);
-
-	// xTaskCreate(hype_test_sevo, "hype_test_sevo", 4096, NULL, 5, NULL);
-	// xTaskCreate(hype_test_voltage, "hype_test_voltage", 4096, NULL, 5, NULL);
 
 }

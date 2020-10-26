@@ -20,7 +20,7 @@
 
 // http://www.gh-lounge.de/mediawiki/index.php/Erkl%C3%A4
 
-#define UART_NUM UART_NUM_0
+#define UART_NUM UART_NUM_1
 #define UART_BUFFER_SIZE 1024
 #define UART_PATTERN_BUFFER_SIZE 16
 #define UART_TXD_PIN 17
@@ -90,7 +90,6 @@ esp_err_t drv_sumd_init() {
 esp_err_t drv_sumd_get_pwm(uint16_t pwm_dest[]) {
 	if (xSemaphoreTake(sumd_decoder_sem, 10 / portTICK_PERIOD_MS) == true) {
 		if (get_time_ms() > servo_pwm_valid_time + 500) {
-			// ESP_LOGE(__FILE__, "SUMD driver could not get valid pwm data");
 			xSemaphoreGive(sumd_decoder_sem);
 			return ESP_FAIL;
 		} else {
@@ -109,9 +108,9 @@ esp_err_t drv_sumd_decode() {
 	uart_get_buffered_data_len(UART_NUM, &len);
 
 	if (len < SUMD_PACKET_LENGTH) {
-		ESP_LOGW(__FILE__,
-			"SUMD packet too short, is %d should %d, check SUMD_CHNL_NUM",
-			len, SUMD_PACKET_LENGTH);
+		ESP_LOGE(__FILE__,
+		         "SUMD packet too short, is %d should %d, check SUMD_CHNL_NUM",
+		         len, SUMD_PACKET_LENGTH);
 		return ESP_FAIL;
 	}
 
@@ -121,7 +120,7 @@ esp_err_t drv_sumd_decode() {
 	if ((buffer[0] != SUMD_PACKET_START) ||
 	    (buffer[1] != SUMD_PACKET_TX_ON && buffer[1] != SUMD_PACKET_TX_OFF) ||
 	    (buffer[2] != SUMD_CHNL_NUM)) {
-		ESP_LOGW(__FILE__, "SUMD packet header error");
+		ESP_LOGE(__FILE__, "SUMD packet header error");
 		return ESP_FAIL;
 	}
 
@@ -174,7 +173,7 @@ esp_err_t drv_sumd_decode() {
 
 void drv_sumd_worker() {
 
-	ESP_LOGI(__FILE__, "SUMD Driver Worker Started");
+	ESP_LOGI(__FILE__, "SUMD driver worker started");
 
 	while (1) {
 
@@ -188,7 +187,7 @@ void drv_sumd_worker() {
 						uart_flush(UART_NUM);
 						xQueueReset(uart_event_queue);
 					} else {
-						// ESP_LOGI(__FILE__, "SUMD packet decode success");
+						/* Decode success */
 					}
 					break;
 
@@ -230,7 +229,7 @@ void drv_sumd_worker() {
 		}
 	}
 
-	ESP_LOGW(__FILE__, "SUMD driver worker stopped");
+	ESP_LOGE(__FILE__, "SUMD driver worker stopped");
 }
 
 void drv_sumd_print(uint16_t pwm[]) {

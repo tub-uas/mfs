@@ -115,6 +115,8 @@ void main_gps() {
 
 	ESP_LOGI(__FILE__, "Running main_gps");
 
+	delay_ms(1000);
+
 	/* NMEA parser configuration */
 	nmea_parser_config_t config = NMEA_PARSER_CONFIG_DEFAULT();
 

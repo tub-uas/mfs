@@ -75,7 +75,7 @@ void app_main() {
 		ESP_ERROR_CHECK(drv_ak8963_init());
 		ESP_ERROR_CHECK(drv_bmp280_init());
 		ESP_ERROR_CHECK(can_com_ahrs_init());
-		ESP_ERROR_CHECK(attitude_init());
+		ESP_ERROR_CHECK(attitude_init()); /* Starts attitude worker */
 
 	#elif defined(GPS_BOARD)
 		ESP_LOGI(__FILE__, "Board type is GPS");

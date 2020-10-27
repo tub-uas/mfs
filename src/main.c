@@ -36,6 +36,7 @@
 #include "main_psu.h"
 #include "main_rai.h"
 #include "pid.h"
+#include "system.h"
 #include "util_quaternion.h"
 #include "util_vecmath.h"
 #include "util.h"

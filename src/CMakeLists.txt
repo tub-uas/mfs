@@ -27,6 +27,7 @@ set(app_sources
 	"main_rai.c"
 	"main.c"
 	"pid.c"
+	"system.c"
 	"util_quaternion.c"
 	"util_vecmath.c"
 	"util.c"

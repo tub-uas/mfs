@@ -95,7 +95,7 @@ esp_err_t attitude_init() {
 
 	ESP_LOGI(__FILE__, "Attitude calibration success ...");
 
-	if (xTaskCreate(attitude_worker, "attitude_worker", 4096, NULL, 5, NULL) < 0) {
+	if (xTaskCreate(attitude_worker, "attitude_worker", 4096, NULL, 10, NULL) < 0) {
 		ESP_LOGE(__FILE__, "Cant start Attitude Worker");
 		return ESP_FAIL;
 	}

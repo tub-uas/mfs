@@ -42,7 +42,7 @@ esp_err_t can_com_rai_init() {
 		return ESP_FAIL;
 	}
 
-	if (xTaskCreate(can_com_rai_worker, "can_com_rai_worker", 4096, NULL, 5, NULL) < 0) {
+	if (xTaskCreate(can_com_rai_worker, "can_com_rai_worker", 4096, NULL, 15, NULL) < 0) {
 		ESP_LOGE(__FILE__, "Cant start CAN Com Rai worker");
 		return ESP_FAIL;
 	}

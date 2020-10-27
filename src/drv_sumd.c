@@ -74,7 +74,7 @@ esp_err_t drv_sumd_init() {
 		return ESP_FAIL;
 	}
 
-	if (xTaskCreate(drv_sumd_worker, "drv_sumd_worker", 4096, NULL, 5, NULL) < 0) {
+	if (xTaskCreate(drv_sumd_worker, "drv_sumd_worker", 4096, NULL, 20, NULL) < 0) {
 		ESP_LOGE(__FILE__, "Cant start SUMD driver worker");
 		return ESP_FAIL;
 	}

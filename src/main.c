@@ -89,19 +89,17 @@ void app_main() {
 	ESP_LOGI(__FILE__, "=========== System Started Successfully ===========");
 
 	#if defined(RAI_BOARD)
-		xTaskCreate(send_rai, "send_rai", 4096, NULL, 5, NULL);
-		xTaskCreate(recv_rai, "recv_rai", 4096, NULL, 5, NULL);
+		xTaskCreate(send_rai, "send_rai", 4096, NULL, 10, NULL);
+		xTaskCreate(recv_rai, "recv_rai", 4096, NULL, 20, NULL);
 
 	#elif defined(PSU_BOARD)
-		xTaskCreate(main_psu, "main_psu", 4096, NULL, 5, NULL);
+		xTaskCreate(main_psu, "main_psu", 4096, NULL, 10, NULL);
 
 	#elif defined(AHRS_BOARD)
-		xTaskCreate(main_ahrs, "main_ahrs", 4096, NULL, 5, NULL);
+		xTaskCreate(main_ahrs, "main_ahrs", 4096, NULL, 10, NULL);
 
 	#elif defined(GPS_BOARD)
-		xTaskCreate(main_gps, "main_gps", 4096, NULL, 5, NULL);
+		xTaskCreate(main_gps, "main_gps", 4096, NULL, 10, NULL);
 
 	#endif
-
-
 }

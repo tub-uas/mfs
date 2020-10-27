@@ -529,7 +529,7 @@ nmea_parser_handle_t nmea_parser_init(const nmea_parser_config_t *config) {
 	                             "nmea_parser",
 	                             4096,
 	                             esp_gps,
-	                             5,
+	                             10,
 	                             &esp_gps->tsk_hdl);
 	if (err != pdTRUE) {
 		ESP_LOGE(__FILE__, "create NMEA Parser task failed");

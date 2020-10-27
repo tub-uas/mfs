@@ -43,9 +43,9 @@ void main_psu() {
 		ESP_ERROR_CHECK(drv_sense_ext_read_curr(SENSE_EXT_SYS_ADDR, &data.sense_sys_curr));
 		ESP_ERROR_CHECK(drv_sense_ext_read_pow(SENSE_EXT_SYS_ADDR, &data.sense_sys_pow));
 
-		// printf("Main %10f %10f %10f \n", data.sense_main_volt, data.sense_main_curr, data.sense_main_pow);
-		// printf("Pwr %10f %10f %10f \n", data.sense_pwr_volt, data.sense_pwr_curr, data.sense_pwr_pow);
-		// printf("sys %10f %10f %10f \n", data.sense_sys_volt, data.sense_sys_curr, data.sense_sys_pow);
+		printf("Main %10f %10f %10f \n", data.sense_main_volt, data.sense_main_curr, data.sense_main_pow);
+		printf("Pwr %10f %10f %10f \n", data.sense_pwr_volt, data.sense_pwr_curr, data.sense_pwr_pow);
+		printf("sys %10f %10f %10f \n", data.sense_sys_volt, data.sense_sys_curr, data.sense_sys_pow);
 
 		// todo: do something more advanced here
 		if (data.sense_main_volt < 11.5 ||

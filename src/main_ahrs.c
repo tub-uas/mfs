@@ -36,7 +36,7 @@ void main_ahrs() {
 		can_com_ahrs_t ahrs_data;
 		get_attitude(&ahrs_data);
 
-		// printf("att: %10.5f, %10.5f, %10.5f, ", ahrs_data.att[0], ahrs_data.att[1], ahrs_data.att[2]);
+		printf("att: %10.5f, %10.5f, %10.5f, ", ahrs_data.att[0], ahrs_data.att[1], ahrs_data.att[2]);
 		printf("temp: %.2f, press: %.2f \n", ahrs_data.temp, ahrs_data.press);
 
 		can_com_ahrs_send(ahrs_data);

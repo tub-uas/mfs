@@ -197,6 +197,7 @@ void attitude_gyro_q(float gyr[3], float est_q[4],float gyr_q[4], float millis_d
 
 
 void attitude_quat_eul_conv(float Q[4],float att[3]) {
+
 	static float arg = 0;
 
 	arg = (-2.0) * (Q[0]*Q[2]+Q[1]*Q[3]);
@@ -208,7 +209,7 @@ void attitude_quat_eul_conv(float Q[4],float att[3]) {
 }
 
 
-void attitude_est(float acc[3], float gyr[3],float mag[3], float att[3], float millis_delta) {
+void attitude_est(float acc[3], float gyr[3], float mag[3], float att[3], float millis_delta) {
 
 	static float acc_q[4] = {0.0};
 	static float gyr_q[4] = {0.0};
@@ -309,10 +310,6 @@ void attitude_worker() {
 		last_time = get_time_s();
 
 		attitude_est(acc, gyr, mag, att, delta_time);
-
-		// att[0] = att[0]*180/PI; // convert data to degree
-		// att[1] = att[1]*180/PI;
-		// att[2] = att[2]*180/PI;
 
 		float temp = bmp280_get_temp();
 		float press = bmp280_get_press();

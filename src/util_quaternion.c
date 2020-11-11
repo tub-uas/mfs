@@ -2,14 +2,14 @@
 
 #include <math.h>
 
-#define P0  p[0]
-#define P1  p[1]
-#define P2  p[2]
-#define P3  p[3]
-#define Q0  q[0]
-#define Q1  q[1]
-#define Q2  q[2]
-#define Q3  q[3]
+#define P0 (p[0])
+#define P1 (p[1])
+#define P2 (p[2])
+#define P3 (p[3])
+#define Q0 (q[0])
+#define Q1 (q[1])
+#define Q2 (q[2])
+#define Q3 (q[3])
 
 void quaternion_prod(float p[4], float q[4], float res[4]) {
 
@@ -20,7 +20,7 @@ void quaternion_prod(float p[4], float q[4], float res[4]) {
 }
 
 void quaternion_inverse(float q[4], float res[4]) {
-	
+
 	res[0] = Q0;
 	res[1] = -Q1;
 	res[2] = -Q2;

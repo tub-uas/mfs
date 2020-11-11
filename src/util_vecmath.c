@@ -2,18 +2,18 @@
 
 #include <math.h>
 
-#define M11 mat[0][0]
-#define M12 mat[0][1]
-#define M13 mat[0][2]
-#define M21 mat[1][0]
-#define M22 mat[1][1]
-#define M23 mat[1][2]
-#define M31 mat[2][0]
-#define M32 mat[2][1]
-#define M33 mat[2][2]
-#define V1 vec[0]
-#define V2 vec[1]
-#define V3 vec[2]
+#define M11 (mat[0][0])
+#define M12 (mat[0][1])
+#define M13 (mat[0][2])
+#define M21 (mat[1][0])
+#define M22 (mat[1][1])
+#define M23 (mat[1][2])
+#define M31 (mat[2][0])
+#define M32 (mat[2][1])
+#define M33 (mat[2][2])
+#define V1  (vec[0])
+#define V2  (vec[1])
+#define V3  (vec[2])
 
 void vecmath_matr_mul_3d(float mat[3][3], float vec[3], float res[3]) {
 	res[0] = M11*V1+M12*V2+M13*V3;

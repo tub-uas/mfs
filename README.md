@@ -1,5 +1,49 @@
 # Modular Flight System (MFS)
 
+This repository contains the software running on the ESP32 chips that are part of
+the Modular Flight System (MFS). Currently we are supporting 4 different boards / PCBs
+(Printed Circuit Boards):
+
+- RAI (Radio Actuator Interface)
+- AHRS (Altitude Heading Reference System)
+- PSU (Power Supply Unit)
+- GPS (Global Positioning System) (GNSS - Global Navigation Satellite System)
+
+All boards share a common (this) code base, since they all use very similar driver
+/ boilerplate software.
+
+## Individual boards
+
+#### RAI
+
+The RAI (Radio Actuator Interface) is the most important board of all. It enables
+communication from the RC (Radio Control) receiver, which receives information form the pilots transmitter,
+to the servos and the motor. It is also able to transmit and receive control data
+over the CAN bus. This way the pilot can enable the autopilot / controller running
+on the Flight Control Computer (FCC). The software running on the RAI needs to be
+extremely reliable and bug free. Any fault could cause a loss of communication with
+the pilot which would inevitably lead to a loss of the aircraft.
+
+The main tasks of the RAI include:
+- Receiving control data from the RC receiver via UART (Universal Asynchronous Receiver-Transmitter)/ SUMD (Digital SUM Signal)
+- Control of servo and motor via PWM (Puls Width Modulatiom)
+- Communication via CAN with the FCC (transmitting and receiving control data)
+- Switching between manual (RC receiver) and automatic (FCC) flight control
+- In case of communication loss activate fail safe
+
+#### AHRS
+
+TODO
+
+#### PSU
+
+TODO
+
+#### GPS
+
+TODO
+
+
 ## CAN IDs
 
 #### General
@@ -28,6 +72,13 @@
 | 1900 - 1999 | 0x76C - 0x7CF | LIGHTS   |
 | 2000 - 2048 | 0x7D0 - 0x800 | AUX      |
 
+
+#### More information
+
+For more information about the actual messages send over the CAN protocol have a
+look at [can_ids.h](./include/can_ids.h) and [can_meta.h](./can_meta.h). There you
+will find the actual IDs of the individual CAN messages, as well as meta information,
+such as the length of the data chunk send (i.e. the number of CAN messages) and more.
 
 ## Coding Guide
 

@@ -283,7 +283,6 @@ void attitude_worker() {
 			ESP_LOGE(__FILE__, "Error while reading magnetometer data from mpu9250");
 		}
 
-
 		float acc[3] = {0.0};
 		acc[0] = (acc_raw.acc_x - acc_err.acc_x);
 		acc[1] = (acc_raw.acc_y - acc_err.acc_y);

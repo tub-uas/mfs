@@ -83,15 +83,21 @@ esp_err_t attitude_init() {
 		delay_ms(CAL_DELAY);
 	}
 
-	acc_err.acc_x /= NUM_CAL_SAMPLES;
-	acc_err.acc_y /= NUM_CAL_SAMPLES;
-	acc_err.acc_z /= NUM_CAL_SAMPLES;
+	// acc_err.acc_x /= NUM_CAL_SAMPLES;
+	// acc_err.acc_y /= NUM_CAL_SAMPLES;
+	// acc_err.acc_z /= NUM_CAL_SAMPLES;
+	acc_err.acc_x = 0.0;
+	acc_err.acc_y = 0.0;
+	acc_err.acc_z = 0.0;
 	gyr_err.gyr_x /= NUM_CAL_SAMPLES;
 	gyr_err.gyr_y /= NUM_CAL_SAMPLES;
 	gyr_err.gyr_z /= NUM_CAL_SAMPLES;
-	mag_err.mag_x /= NUM_CAL_SAMPLES;
-	mag_err.mag_y /= NUM_CAL_SAMPLES;
-	mag_err.mag_z /= NUM_CAL_SAMPLES;
+	// mag_err.mag_x /= NUM_CAL_SAMPLES;
+	// mag_err.mag_y /= NUM_CAL_SAMPLES;
+	// mag_err.mag_z /= NUM_CAL_SAMPLES;
+	mag_err.mag_x /= 0.0;
+	mag_err.mag_y /= 0.0;
+	mag_err.mag_z /= 0.0;
 
 	ESP_LOGI(__FILE__, "Attitude calibration success ...");
 

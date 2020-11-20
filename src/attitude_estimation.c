@@ -142,20 +142,19 @@ void attitude_acc_q(float acc[3], float q_res[4]) {
 void attitude_acc_mag_q(float acc_q[4],float mag[3], float mag_res_q[4], float acc_mag_q[4]) {
 
 	float q_accInv[4] = {0.0};
-	float q_mag[4] = {0, mag[0], mag[1], mag[2]};
-	float sqr_gamma, gamma;
-
 	quaternion_inverse(acc_q, q_accInv);
 
-	quaternion_prod(q_mag,acc_q,q_mag);
-	quaternion_prod(q_accInv,q_mag,q_mag);
+	float q_mag[4] = {0, mag[0], mag[1], mag[2]};
+	quaternion_prod(q_mag, acc_q, q_mag);
+
+	quaternion_prod(q_accInv, q_mag, q_mag);
 
 	mag[0] = q_mag[1];
 	mag[1] = q_mag[2];
 	mag[2] = q_mag[3];
 
-	gamma     = mag[0]*mag[0] + mag[1]*mag[1];
-	sqr_gamma = sqrt(gamma);
+	float gamma = mag[0]*mag[0] + mag[1]*mag[1];
+	float sqr_gamma = sqrt(gamma);
 
 	if(mag[0] < 0) {
 		mag_res_q[0] = mag[1]/sqrt(2*sqr_gamma*(sqr_gamma-mag[0]));
@@ -177,18 +176,15 @@ void attitude_acc_mag_q(float acc_q[4],float mag[3], float mag_res_q[4], float a
 
 void attitude_gyro_q(float gyr[3], float est_q[4],float gyr_q[4], float millis_delta) {
 
-	static float angular = 0.0;
+	float angular = millis_delta*sqrt(gyr[0]*gyr[0] + gyr[1]*gyr[1] + gyr[2]*gyr[2]);
+
 	static float dq[4] = {0.0};
-	static float S = 0.0;
-
-	angular = millis_delta*sqrt(gyr[0]*gyr[0] + gyr[1]*gyr[1] + gyr[2]*gyr[2]);
-
 	dq[0] = cos(angular/2);
 
-	S = (-1)*millis_delta*sin(angular/2)/angular;
-	dq[1] = gyr[0] *S;
-	dq[2] = gyr[1] *S;
-	dq[3] = gyr[2] *S;
+	float s = (-1)*millis_delta*sin(angular/2)/angular;
+	dq[1] = gyr[0] * s;
+	dq[2] = gyr[1] * s;
+	dq[3] = gyr[2] * s;
 
 	quaternion_norm(dq, dq);
 	quaternion_prod(dq, est_q, gyr_q);
@@ -198,9 +194,7 @@ void attitude_gyro_q(float gyr[3], float est_q[4],float gyr_q[4], float millis_d
 
 void attitude_quat_eul_conv(float Q[4],float att[3]) {
 
-	static float arg = 0;
-
-	arg = (-2.0) * (Q[0]*Q[2]+Q[1]*Q[3]);
+	float arg = (-2.0) * (Q[0]*Q[2]+Q[1]*Q[3]);
 	arg = fmin(fmax(arg,-1.0),1.0);
 
 	att[0] = atan2( 2*(Q[2]*Q[3]-Q[0]*Q[1]), 1-2*(Q[1]*Q[1]+Q[2]*Q[2]) );
@@ -211,31 +205,24 @@ void attitude_quat_eul_conv(float Q[4],float att[3]) {
 
 void attitude_est(float acc[3], float gyr[3], float mag[3], float att[3], float millis_delta) {
 
-	static float acc_q[4] = {0.0};
-	static float gyr_q[4] = {0.0};
-	static float mag_q[4] = {0.0};
-	float magn[3] = {0.0};
 	float accn[3] = {0.0};
-	static float acc_mag_q[4] = {0.0};
+	float err_acc = fabs(vecmath_norm_3d(acc, accn)-1.0);
 
-	static float est_q[4] = {1.0,0.0,0.0,0.0};
-
-	static float dotprod;
-	static float gain;
-
-	float abs_acc, err_acc;
-
-	abs_acc = vecmath_norm_3d(acc, accn);
-	err_acc = fabs(abs_acc-1);
-
+	float magn[3] = {0.0};
 	vecmath_norm_3d(mag, magn);
 
+	static float acc_q[4] = {0.0};
 	attitude_acc_q(accn, acc_q);
+
+	static float mag_q[4] = {0.0};
+	static float acc_mag_q[4] = {0.0};
 	attitude_acc_mag_q(acc_q, magn, mag_q, acc_mag_q);
+
+	static float gyr_q[4] = {0.0};
+	static float est_q[4] = {1.0,0.0,0.0,0.0};
 	attitude_gyro_q(gyr, est_q, gyr_q, millis_delta);
 
-	dotprod = acc_mag_q[0]*gyr_q[0] + acc_mag_q[1]*gyr_q[1] + acc_mag_q[2]*gyr_q[2] + acc_mag_q[3]*gyr_q[3];
-
+	float dotprod = acc_mag_q[0]*gyr_q[0] + acc_mag_q[1]*gyr_q[1] + acc_mag_q[2]*gyr_q[2] + acc_mag_q[3]*gyr_q[3];
 	if (dotprod < 0.0) {
 		acc_mag_q[0] *= -1.0;
 		acc_mag_q[1] *= -1.0;
@@ -243,8 +230,7 @@ void attitude_est(float acc[3], float gyr[3], float mag[3], float att[3], float 
 		acc_mag_q[3] *= -1.0;
 	}
 
-	gain = adaptive_gain(err_acc);
-
+	float gain = adaptive_gain(err_acc);
 	for (uint8_t i = 0; i < 4; ++i) {
 		est_q[i] = gain * acc_mag_q[i] + (1-gain) * gyr_q[i];
 	}
@@ -254,6 +240,7 @@ void attitude_est(float acc[3], float gyr[3], float mag[3], float att[3], float 
 
 
 esp_err_t get_attitude(can_com_ahrs_t *data) {
+
 	if (xSemaphoreTake(ahrs_sem, 10 / portTICK_PERIOD_MS) == true) {
 		memcpy(data, &ahrs_data, sizeof(can_com_ahrs_t));
 		xSemaphoreGive(ahrs_sem);
@@ -273,11 +260,6 @@ void attitude_worker() {
 
 	while (1) {
 
-		float acc[3];
-		float gyr[3];
-		float mag[3];
-		float att[3];
-
 		mpu9250_acc_data_t acc_raw;
 		mpu9250_gyr_data_t gyr_raw;
 		ak8963_mag_data_t mag_raw;
@@ -295,20 +277,25 @@ void attitude_worker() {
 			ESP_LOGE(__FILE__, "Error while reading magnetometer data from mpu9250");
 		}
 
+
+		float acc[3] = {0.0};
 		acc[0] = (acc_raw.acc_x - acc_err.acc_x);
 		acc[1] = (acc_raw.acc_y - acc_err.acc_y);
 		acc[2] = (acc_raw.acc_z - acc_err.acc_z);
+		float gyr[3] = {0.0};
 		gyr[0] = (gyr_raw.gyr_x - gyr_err.gyr_x)*PI/180.0;
 		gyr[1] = (gyr_raw.gyr_y - gyr_err.gyr_y)*PI/180.0;
 		gyr[2] = (gyr_raw.gyr_z - gyr_err.gyr_z)*PI/180.0;
+		float mag[3] = {0.0};
 		mag[0] = (mag_raw.mag_x /*- mag_err.mag_x*/)/100.0;
 		mag[1] = (mag_raw.mag_y /*- mag_err.mag_y*/)/100.0;
 		mag[2] = (mag_raw.mag_z /*- mag_err.mag_z*/)/100.0;
 
-		static float last_time;
+		static float last_time = 0.0;
 		float delta_time = get_time_s() - last_time;
 		last_time = get_time_s();
 
+		float att[3] = {0.0};
 		attitude_est(acc, gyr, mag, att, delta_time);
 
 		float temp = bmp280_get_temp();

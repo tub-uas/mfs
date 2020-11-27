@@ -25,12 +25,6 @@ typedef enum {
 } ak8963_bit_t;
 
 typedef struct {
-	float mag_x;
-	float mag_y;
-	float mag_z;
-} ak8963_mag_data_t;
-
-typedef struct {
 	uint8_t asa_x;
 	uint8_t asa_y;
 	uint8_t asa_z;
@@ -38,6 +32,12 @@ typedef struct {
 	float adj_y;
 	float adj_z;
 } ak8963_sens_coeff_t;
+
+typedef struct {
+	float x;
+	float y;
+	float z;
+} __attribute__((packed)) ak8963_mag_data_t;
 
 esp_err_t drv_ak8963_init();
 
@@ -55,7 +55,9 @@ uint8_t drv_ak8963_data_rdy();
 
 uint8_t drv_ak8963_status();
 
-esp_err_t drv_ak8963_read_mag_vec(ak8963_mag_data_t *mag_vec);
+esp_err_t drv_ak8963_read_mag_native(ak8963_mag_data_t *mag);
+
+esp_err_t drv_ak8963_read_mag(ak8963_mag_data_t *mag);
 
 void drv_ak8963_test();
 

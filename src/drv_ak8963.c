@@ -15,9 +15,19 @@
 #include "drv_i2c.h"
 #include "board.h"
 #include "util.h"
+#include "util_vecmath.h"
 
+/* AK8963 I2C device */
 static i2c_device_t ak8963;
-ak8963_sens_coeff_t sens_coeff;
+
+/* Internal gyroscope variables */
+static ak8963_sens_coeff_t sens_coeff;
+
+/* TODO Are determined once */
+static ak8963_mag_data_t hard_iron_err = {.x = 0.0, .y = 0.0, .z = 0.0};
+static float soft_iron_err[3][3] = {{1.0, 0.0, 0.0},
+                                    {0.0, 1.0, 0.0},
+                                    {0.0, 0.0, 1.0}};
 
 esp_err_t drv_ak8963_init() {
 
@@ -28,8 +38,8 @@ esp_err_t drv_ak8963_init() {
 	ak8963.speed = 400000;
 	ak8963.timeout = 1000;
 
-	// !!! Already initalized by MPU9250 -> call mpu9250_init() before ak8963_init() !!!
-	esp_err_t ret_ak8963 = ESP_OK; // = drv_i2c_init(ak8963);
+	/* Already initalized by MPU9250 -> call mpu9250_init() before ak8963_init() */
+	esp_err_t ret_ak8963 = ESP_OK; /* Not needed: = drv_i2c_init(ak8963); */
 
 	if(drv_ak8963_ping()) {
 		ESP_LOGE(__FILE__,"AK8963 not found");
@@ -106,41 +116,70 @@ uint8_t drv_ak8963_status() {
 	return (data & AK8963_BITMASK_HOFL);
 }
 
-esp_err_t drv_ak8963_read_mag_vec(ak8963_mag_data_t *mag_vec) {
+esp_err_t drv_ak8963_read_mag_native(ak8963_mag_data_t *mag) {
 
 	if (drv_ak8963_data_rdy()) {
 
 		uint8_t data[6];
 		drv_i2c_read_bytes(ak8963, HXL, 6, data);
 
-		int16_t tmp[3];
-		tmp[0] = (int16_t)((data[1] << 8) | data[0]);
-		tmp[1] = (int16_t)((data[3] << 8) | data[2]);
-		tmp[2] = (int16_t)((data[5] << 8) | data[4]);
+		int16_t raw[3];
+		raw[0] = (int16_t)((data[1] << 8) | data[0]);
+		raw[1] = (int16_t)((data[3] << 8) | data[2]);
+		raw[2] = (int16_t)((data[5] << 8) | data[4]);
 
-		mag_vec->mag_x = (float)(tmp[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
-		mag_vec->mag_y = (float)(tmp[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
-		mag_vec->mag_z = (float)(tmp[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
+		float mag_tmp[3];
+		mag_tmp[0] = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
+		mag_tmp[1] = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
+		mag_tmp[2] = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
+		mag->x = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
+		mag->y = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
+		mag->z = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
 
-		#if defined(DEFAULT_ORIENT)
-			// Nothing to be done
-		#elif defined(HYPE_ORIENT)
-			float mag_y_tmp = -mag_vec->mag_y;
-			mag_vec->mag_y = mag_vec->mag_z;
-			mag_vec->mag_z = mag_y_tmp;
-		#else
-			#error "Unkown board orientation"
-		#endif
+		/* Compensate for hard-iron errors */
+		mag_tmp[0] -= hard_iron_err.x;
+		mag_tmp[1] -= hard_iron_err.y;
+		mag_tmp[2] -= hard_iron_err.z;
+
+		/* Compensate for soft-iron errors */
+		vecmath_matr_mul_3d(soft_iron_err, mag_tmp, (float*)mag);
 
 	} else {
-		// No new data available at this time
+		/* No new data available at this time */
 		return ESP_ERR_TIMEOUT;
 	}
 
-	if (drv_ak8963_status()) {
+	if (drv_ak8963_status() == 1) {
 		ESP_LOGW(__FILE__, "Data overflow");
 		return ESP_FAIL;
 	}
+
+	return ESP_OK;
+}
+
+esp_err_t drv_ak8963_read_mag(ak8963_mag_data_t *mag) {
+
+	ak8963_mag_data_t mag_tmp;
+	esp_err_t ret = drv_ak8963_read_mag_native(&mag_tmp);
+	if (ret != ESP_OK) {
+		return ret;
+	}
+
+	#if defined(NATIVE_ORIENT)
+		mag->x = mag_tmp.y;
+		mag->y = mag_tmp.x;
+		mag->z = -mag_tmp.z;
+	#elif defined(DEFAULT_ORIENT)
+		mag->x = mag_tmp.x;
+		mag->y = mag_tmp.y;
+		mag->z = mag_tmp.z;
+	#elif defined(HYPE_ORIENT)
+		mag->x = mag_tmp.x;
+		mag->y = mag_tmp.z;
+		mag->z = -mag_tmp.y;
+	#else
+		#error "Unkown board orientation"
+	#endif
 
 	return ESP_OK;
 }
@@ -152,10 +191,10 @@ void drv_ak8963_test() {
 	while(1) {
 
 		ak8963_mag_data_t mag;
-		drv_ak8963_read_mag_vec(&mag);
-		printf("mag_x %f, mag_y %f, mag_z %f \n", mag.mag_x, mag.mag_y, mag.mag_z);
+		drv_ak8963_read_mag(&mag);
+		printf("mag x %10.5f, y %10.5f, z %10.5f\n", mag.x, mag.y, mag.z);
 
-		delay_ms(100);
+		delay_ms(10);
 	}
 
 }

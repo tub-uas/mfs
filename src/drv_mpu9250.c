@@ -16,9 +16,18 @@
 #include "board.h"
 #include "util.h"
 
+/* MPU9250 I2C device */
 static i2c_device_t mpu9250;
-float gyr_scale = 0.0;
-float acc_scale = 0.0;
+
+/* Internal accelerometer variables */
+static float acc_scale_val = 0.0;
+/* TODO Are determined once */
+static mpu9250_acc_data_t acc_scale_err_pos = {.x = 1.0, .y = 1.0, .z = 1.0};
+static mpu9250_acc_data_t acc_scale_err_neg = {.x = 1.0, .y = 1.0, .z = 1.0};
+
+/* Internal gyroscope variables */
+static float gyr_scale_val = 0.0;
+static mpu9250_gyr_data_t gyr_bias_err;
 
 esp_err_t drv_mpu9250_init() {
 
@@ -37,78 +46,27 @@ esp_err_t drv_mpu9250_init() {
 	}
 
 	ret_mpu9250 |= drv_mpu9250_reset();
-	delay_ms(1000);
+	delay_ms(500);
 	ret_mpu9250 |= drv_mpu9250_config_clk();
 	delay_ms(100);
 	ret_mpu9250 |= drv_mpu9250_enable_mag_access();
-	delay_ms(100);
-	ret_mpu9250 |= drv_mpu9250_set_gyr_filter();
-	delay_ms(100);
+	delay_ms(10);
 	ret_mpu9250 |= drv_mpu9250_set_acc_filter();
-	delay_ms(100);
-	ret_mpu9250 |= drv_mpu9250_set_gyr_scale(GS_250); // 250 degree per second
-	delay_ms(100);
-	ret_mpu9250 |= drv_mpu9250_set_acc_scale(AS_2); // 2g
-	delay_ms(100);
+	delay_ms(10);
+	ret_mpu9250 |= drv_mpu9250_set_acc_scale(AS_4); // 4g
+	delay_ms(10);
+	ret_mpu9250 |= drv_mpu9250_set_gyr_filter();
+	delay_ms(10);
+	ret_mpu9250 |= drv_mpu9250_set_gyr_scale(GS_500); // 500 degree per second
+	delay_ms(10);
 	ret_mpu9250 |= drv_mpu9250_enable_sensors();
+	delay_ms(100);
+	ret_mpu9250 |= drv_mpu9250_calibrate(&gyr_bias_err);
+
+	// printf("gyr_bias_err x %10.5f, y %10.5f, z %10.5f \n",
+	//        gyr_bias_err.x, gyr_bias_err.y, gyr_bias_err.z);
 
 	return ret_mpu9250;
-}
-
-esp_err_t drv_mpu9250_ping() {
-
-	uint8_t resp = 0x00;
-	drv_i2c_read_bytes(mpu9250, WHO_AM_I, 1, &resp);
-
-	if (resp != MPU9250_WHO_AM_I_RESP) {
-		ESP_LOGE(__FILE__, "MPU9250 not found, ping unsuccessful, WHO_AM_I_RESP does not match");
-		return ESP_FAIL;
-	}
-
-	return ESP_OK;
-}
-
-esp_err_t drv_mpu9250_config_clk() {
-
-	// Clear sleep mode
-	drv_i2c_write_bytes(mpu9250, PWR_MGMT_1, 1, MPU9250_BMASK_CLEAR_PWR1);
-	delay_ms(100);
-
-	// Select clock source -> best
-	drv_i2c_write_bytes(mpu9250, PWR_MGMT_1, 1, MPU9250_BMASK_SELCLK);
-	delay_ms(100);
-
-	// Select sample rate -> divider = 4
-	drv_i2c_write_bytes(mpu9250, SMPLRT_DIV, 1, MPU9250_BMASK_SMPLRT_DIV);
-	delay_ms(100);
-
-	return ESP_OK;
-}
-
-esp_err_t drv_mpu9250_set_gyr_filter() {
-
-	drv_i2c_write_bytes(mpu9250, CONFIG, 1, MPU9250_BMASK_GYR_LPFCFG);
-
-	uint8_t resp = 0x00;
-	drv_i2c_read_bytes(mpu9250, GYRO_CONFIG, 1, &resp);
-
-	resp &= ~(MPU9250_BMASK_GYR_FCHOICEB);
-	drv_i2c_write_bytes(mpu9250, GYRO_CONFIG, 1, resp);
-
-	return ESP_OK;
-}
-
-esp_err_t drv_mpu9250_set_acc_filter() {
-
-	uint8_t resp = 0x00;
-	drv_i2c_read_bytes(mpu9250, ACCEL_CONFIG_2, 1, &resp);
-
-	resp &= ~(0x0F);
-	resp |= MPU9250_BMASK_ACC_LPFCFG;
-
-	drv_i2c_write_bytes(mpu9250, ACCEL_CONFIG_2, 1, resp);
-
-	return ESP_OK;
 }
 
 esp_err_t drv_mpu9250_reset() {
@@ -143,6 +101,84 @@ esp_err_t drv_mpu9250_enable_mag_access() {
 	return ESP_OK;
 }
 
+esp_err_t drv_mpu9250_ping() {
+
+	uint8_t resp = 0x00;
+	drv_i2c_read_bytes(mpu9250, WHO_AM_I, 1, &resp);
+
+	if (resp != MPU9250_WHO_AM_I_RESP) {
+		ESP_LOGE(__FILE__, "MPU9250 not found, ping unsuccessful, WHO_AM_I_RESP does not match");
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_config_clk() {
+
+	// Clear sleep mode
+	drv_i2c_write_bytes(mpu9250, PWR_MGMT_1, 1, MPU9250_BMASK_CLEAR_PWR1);
+	delay_ms(100);
+
+	// Select clock source -> best
+	drv_i2c_write_bytes(mpu9250, PWR_MGMT_1, 1, MPU9250_BMASK_SELCLK);
+	delay_ms(100);
+
+	// Select sample rate -> divider = 4
+	drv_i2c_write_bytes(mpu9250, SMPLRT_DIV, 1, MPU9250_BMASK_SMPLRT_DIV);
+	delay_ms(100);
+
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_set_acc_filter() {
+
+	uint8_t resp = 0x00;
+	drv_i2c_read_bytes(mpu9250, ACCEL_CONFIG_2, 1, &resp);
+
+	resp &= ~(0x0F);
+	resp |= MPU9250_BMASK_ACC_LPFCFG;
+
+	drv_i2c_write_bytes(mpu9250, ACCEL_CONFIG_2, 1, resp);
+
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_set_acc_scale(mpu9250_acc_scale_t scale) {
+
+	drv_i2c_write_bytes(mpu9250, ACCEL_CONFIG, 1, scale << 3);
+
+	switch(scale) {
+		case AS_2:
+			acc_scale_val = 2.0/32768.0;
+			break;
+		case AS_4:
+			acc_scale_val = 4.0/32768.0;
+			break;
+		case AS_8:
+			acc_scale_val = 8.0/32768.0;
+			break;
+		case AS_16:
+			acc_scale_val = 16.0/32768.0;
+			break;
+	}
+
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_set_gyr_filter() {
+
+	drv_i2c_write_bytes(mpu9250, CONFIG, 1, MPU9250_BMASK_GYR_LPFCFG);
+
+	uint8_t resp = 0x00;
+	drv_i2c_read_bytes(mpu9250, GYRO_CONFIG, 1, &resp);
+
+	resp &= ~(MPU9250_BMASK_GYR_FCHOICEB);
+	drv_i2c_write_bytes(mpu9250, GYRO_CONFIG, 1, resp);
+
+	return ESP_OK;
+}
+
 esp_err_t drv_mpu9250_set_gyr_scale(mpu9250_gyr_scale_t scale) {
 
 	uint8_t data;
@@ -155,83 +191,131 @@ esp_err_t drv_mpu9250_set_gyr_scale(mpu9250_gyr_scale_t scale) {
 
 	switch(scale) {
 		case GS_250:
-			gyr_scale = 250.0/32768.0;
+			gyr_scale_val = 250.0/32768.0;
 			break;
 		case GS_500:
-			gyr_scale = 500.0/32768.0;
+			gyr_scale_val = 500.0/32768.0;
 			break;
 		case GS_1000:
-			gyr_scale = 1000.0/32768.0;
+			gyr_scale_val = 1000.0/32768.0;
 			break;
 		case GS_2000:
-			gyr_scale = 2000.0/32768.0;
+			gyr_scale_val = 2000.0/32768.0;
 			break;
 	}
 
 	return ESP_OK;
 }
 
-esp_err_t drv_mpu9250_set_acc_scale(mpu9250_acc_scale_t scale) {
+esp_err_t drv_mpu9250_read_acc_native(mpu9250_acc_data_t *acc) {
 
-	drv_i2c_write_bytes(mpu9250, ACCEL_CONFIG, 1, scale << 3);
-
-	switch(scale) {
-		case AS_2:
-			acc_scale = 2.0/32768.0;
-			break;
-		case AS_4:
-			acc_scale = 4.0/32768.0;
-			break;
-		case AS_8:
-			acc_scale = 8.0/32768.0;
-			break;
-		case AS_16:
-			acc_scale = 16.0/32768.0;
-			break;
-	}
-
-	return ESP_OK;
-}
-
-esp_err_t drv_mpu9250_read_gyr_vec(mpu9250_gyr_data_t *gyr_vec) {
-	uint8_t raw[6];
-	drv_i2c_read_bytes(mpu9250, GYRO_XOUT_H, 6, raw);
-
-	gyr_vec->gyr_y = (int16_t)(((uint16_t)raw[0] << 8) | raw[1]) *  gyr_scale;
-	gyr_vec->gyr_x = (int16_t)(((uint16_t)raw[2] << 8) | raw[3]) *  gyr_scale;
-	gyr_vec->gyr_z = (int16_t)(((uint16_t)raw[4] << 8) | raw[5]) * -gyr_scale;
-
-	#if defined(DEFAULT_ORIENT)
-		// Nothing to be done
-	#elif defined(HYPE_ORIENT)
-		float gyr_y_tmp = -gyr_vec->gyr_y;
-		gyr_vec->gyr_y = gyr_vec->gyr_z;
-		gyr_vec->gyr_z = gyr_y_tmp;
-	#else
-		#error "Unkown board orientation"
-	#endif
-
-	return ESP_OK;
-}
-
-
-esp_err_t drv_mpu9250_read_acc_vec(mpu9250_acc_data_t *acc_vec) {
 	uint8_t raw[6];
 	drv_i2c_read_bytes(mpu9250, ACCEL_XOUT_H, 6, raw);
 
-	acc_vec->acc_y = (int16_t)(((uint16_t)raw[0] << 8) | raw[1]) * -acc_scale;
-	acc_vec->acc_x = (int16_t)(((uint16_t)raw[2] << 8) | raw[3]) * -acc_scale;
-	acc_vec->acc_z = (int16_t)(((uint16_t)raw[4] << 8) | raw[5]) *  acc_scale;
+	acc->x = (int16_t)(((uint16_t)raw[0] << 8) | raw[1]) * acc_scale_val;
+	acc->y = (int16_t)(((uint16_t)raw[2] << 8) | raw[3]) * acc_scale_val;
+	acc->z = (int16_t)(((uint16_t)raw[4] << 8) | raw[5]) * acc_scale_val;
 
-	#if defined(DEFAULT_ORIENT)
-		// Nothing to be done
+	/* Scale error correction */
+	acc->x *= acc->x > 0.0 ? acc_scale_err_pos.x : acc_scale_err_neg.x;
+	acc->y *= acc->y > 0.0 ? acc_scale_err_pos.y : acc_scale_err_neg.y;
+	acc->z *= acc->z > 0.0 ? acc_scale_err_pos.z : acc_scale_err_neg.z;
+
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_read_acc(mpu9250_acc_data_t *acc) {
+
+	mpu9250_acc_data_t acc_tmp;
+	drv_mpu9250_read_acc_native(&acc_tmp);
+
+	#if defined(NATIVE_ORIENT)
+		acc->x = acc_tmp.x;
+		acc->y = acc_tmp.y;
+		acc->z = acc_tmp.z;
+	#elif defined(DEFAULT_ORIENT)
+		acc->x = acc_tmp.y;
+		acc->y = acc_tmp.x;
+		acc->z = -acc_tmp.z;
 	#elif defined(HYPE_ORIENT)
-		float acc_y_tmp = -acc_vec->acc_y;
-		acc_vec->acc_y = acc_vec->acc_z;
-		acc_vec->acc_z = acc_y_tmp;
+		acc->x = acc_tmp.y;
+		acc->y = -acc_tmp.z;
+		acc->z = -acc_tmp.x;
 	#else
 		#error "Unkown board orientation"
 	#endif
+
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_read_gyr_native(mpu9250_gyr_data_t *gyr) {
+
+	uint8_t raw[6];
+	drv_i2c_read_bytes(mpu9250, GYRO_XOUT_H, 6, raw);
+
+	gyr->x = (int16_t)(((uint16_t)raw[0] << 8) | raw[1]) * gyr_scale_val;
+	gyr->y = (int16_t)(((uint16_t)raw[2] << 8) | raw[3]) * gyr_scale_val;
+	gyr->z = (int16_t)(((uint16_t)raw[4] << 8) | raw[5]) * gyr_scale_val;
+
+	/* Bias error correction */
+	gyr->x -= gyr_bias_err.x;
+	gyr->y -= gyr_bias_err.y;
+	gyr->z -= gyr_bias_err.z;
+
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_read_gyr(mpu9250_gyr_data_t *gyr) {
+
+	mpu9250_gyr_data_t gyr_tmp;
+	drv_mpu9250_read_gyr_native(&gyr_tmp);
+
+	#if defined(NATIVE_ORIENT)
+		gyr->x = gyr_tmp.x;
+		gyr->y = gyr_tmp.y;
+		gyr->z = gyr_tmp.z;
+	#elif defined(DEFAULT_ORIENT)
+		gyr->x = gyr_tmp.y;
+		gyr->y = gyr_tmp.x;
+		gyr->z = -gyr_tmp.z;
+	#elif defined(HYPE_ORIENT)
+		gyr->x = gyr_tmp.y;
+		gyr->y = -gyr_tmp.z;
+		gyr->z = -gyr_tmp.x;
+	#else
+		#error "Unkown board orientation"
+	#endif
+
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_calibrate(mpu9250_gyr_data_t *gyr) {
+
+	#define NUM_CAL_SAMPLES (1000)
+	mpu9250_gyr_data_t gyr_raw;
+	TickType_t last_wake_time = xTaskGetTickCount();
+
+	for (int i=0; i<NUM_CAL_SAMPLES; i++) {
+
+		mpu9250_gyr_data_t gyr_tmp;
+		if (drv_mpu9250_read_gyr_native(&gyr_tmp) != ESP_OK) {
+			return ESP_FAIL;
+		}
+
+		gyr_raw.x += gyr_tmp.x;
+		gyr_raw.y += gyr_tmp.y;
+		gyr_raw.z += gyr_tmp.z;
+
+		// TODO check that prev to current value difference is not to high
+
+		delay_until_ms(&last_wake_time, 10);
+	}
+
+	gyr->x = gyr_raw.x / NUM_CAL_SAMPLES;
+	gyr->y = gyr_raw.y / NUM_CAL_SAMPLES;
+	gyr->z = gyr_raw.z / NUM_CAL_SAMPLES;
+
+	// TODO check that E() and Var() make sense
 
 	return ESP_OK;
 }
@@ -246,26 +330,17 @@ void drv_mpu9250_test() {
 
 	ESP_LOGI(__FILE__, "MPU Driver Test");
 
-	// uint8_t resp = 0x00;
-	// drv_i2c_read_bytes(mpu9250, WHO_AM_I, 1, &resp);
-	// if (resp != MPU9250_WHO_AM_I_RESP)
-	// 	ESP_LOGE(__FILE__, "WHO AM I does not match");
-
 	while(1) {
 
-		// uint8_t tmp[2] = {0};
-		// drv_i2c_read_bytes(mpu9250, TEMP_OUT_H, 2, tmp);
-		// printf("tmp: %u \n", tmp[0]<<8|tmp[1]);
-
 		mpu9250_acc_data_t acc;
-		drv_mpu9250_read_acc_vec(&acc);
-		printf("acc_x %f, acc_y %f, acc_z %f \n", acc.acc_x, acc.acc_y, acc.acc_z);
+		drv_mpu9250_read_acc(&acc);
+		printf("acc x %10.5f, y %10.5f, z %10.5f ", acc.x, acc.y, acc.z);
 
-		// mpu9250_gyr_data_t gyr;
-		// drv_mpu9250_read_gyr_vec(&gyr);
-		// printf("gyr_x %f, gyr_y %f, gyr_z %f \n", gyr.gyr_x, gyr.gyr_y, gyr.gyr_z);
+		mpu9250_gyr_data_t gyr;
+		drv_mpu9250_read_gyr(&gyr);
+		printf("gyr x %10.5f, y %10.5f, z %10.5f \n", gyr.x, gyr.y, gyr.z);
 
-		delay_ms(100);
+		delay_ms(10);
 	}
 
 }

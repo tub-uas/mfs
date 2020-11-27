@@ -6,8 +6,9 @@
 #include "esp_err.h"
 
 /* Orientation in which the AHRS board is in */
-// #define DEFAULT_ORIENT
-#define HYPE_ORIENT
+// #define NATIVE_ORIENT
+#define DEFAULT_ORIENT
+// #define HYPE_ORIENT
 
 uint32_t board_get_id();
 

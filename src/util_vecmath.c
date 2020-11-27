@@ -21,6 +21,11 @@ void vecmath_matr_mul_3d(float mat[3][3], float vec[3], float res[3]) {
 	res[2] = M31*V1+M32*V2+M33*V3;
 }
 
+void vecmath_matr_mul_2d(float mat[2][2], float vec[2], float res[2]) {
+	res[0] = M11*V1+M12*V2;
+	res[1] = M21*V1+M22*V2;
+}
+
 float vecmath_norm_3d(float vec[3], float normalized[3]) {
 
 	float abs = sqrt(V1*V1 + V2*V2 + V3*V3);

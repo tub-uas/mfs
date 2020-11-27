@@ -34,7 +34,7 @@ static SemaphoreHandle_t ahrs_sem = NULL;
 
 static mpu9250_acc_data_t acc_err;
 static mpu9250_gyr_data_t gyr_err;
-static ak8963_mag_data_t  mag_err;
+// static ak8963_mag_data_t  mag_err;
 
 
 esp_err_t attitude_init() {
@@ -47,59 +47,59 @@ esp_err_t attitude_init() {
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(__FILE__, "Attitude calibrating sensors ...");
-
-	delay_ms(1000);
-
-	#define NUM_CAL_SAMPLES 100
-	#define CAL_DELAY       10
-
-	for (uint32_t i=0; i<NUM_CAL_SAMPLES; i++) {
-
-		mpu9250_acc_data_t acc_raw;
-		mpu9250_gyr_data_t gyr_raw;
-		ak8963_mag_data_t mag_raw;
-
-		drv_mpu9250_read_acc_vec(&acc_raw);
-		drv_mpu9250_read_gyr_vec(&gyr_raw);
-		drv_ak8963_read_mag_vec(&mag_raw);
-
-		acc_err.acc_x += acc_raw.acc_x;
-		acc_err.acc_y += acc_raw.acc_y;
-		acc_err.acc_z += acc_raw.acc_z - 1.0;
-
-		if (acc_raw.acc_z < 0.9) {
-			ESP_LOGE(__FILE__, "Attitude calibration failed, plane not level");
-			return ESP_FAIL;
-		}
-
-		gyr_err.gyr_x += gyr_raw.gyr_x;
-		gyr_err.gyr_y += gyr_raw.gyr_y;
-		gyr_err.gyr_z += gyr_raw.gyr_z;
-		mag_err.mag_x += mag_raw.mag_x;
-		mag_err.mag_y += mag_raw.mag_y;
-		mag_err.mag_z += mag_raw.mag_z;
-
-		delay_ms(CAL_DELAY);
-	}
-
-	// acc_err.acc_x /= NUM_CAL_SAMPLES;
-	// acc_err.acc_y /= NUM_CAL_SAMPLES;
-	// acc_err.acc_z /= NUM_CAL_SAMPLES;
-	acc_err.acc_x = 0.0;
-	acc_err.acc_y = 0.0;
-	acc_err.acc_z = 0.0;
-	gyr_err.gyr_x /= NUM_CAL_SAMPLES;
-	gyr_err.gyr_y /= NUM_CAL_SAMPLES;
-	gyr_err.gyr_z /= NUM_CAL_SAMPLES;
-	// mag_err.mag_x /= NUM_CAL_SAMPLES;
-	// mag_err.mag_y /= NUM_CAL_SAMPLES;
-	// mag_err.mag_z /= NUM_CAL_SAMPLES;
-	mag_err.mag_x /= 0.0;
-	mag_err.mag_y /= 0.0;
-	mag_err.mag_z /= 0.0;
-
-	ESP_LOGI(__FILE__, "Attitude calibration success ...");
+	// ESP_LOGI(__FILE__, "Attitude calibrating sensors ...");
+	//
+	// delay_ms(1000);
+	//
+	// #define NUM_CAL_SAMPLES 100
+	// #define CAL_DELAY       10
+	//
+	// for (uint32_t i=0; i<NUM_CAL_SAMPLES; i++) {
+	//
+	// 	mpu9250_acc_data_t acc_raw;
+	// 	mpu9250_gyr_data_t gyr_raw;
+	// 	ak8963_mag_data_t mag_raw;
+	//
+	// 	drv_mpu9250_read_acc(&acc_raw);
+	// 	drv_mpu9250_read_gyr(&gyr_raw);
+	// 	drv_ak8963_read_mag(&mag_raw);
+	//
+	// 	acc_err.x += acc_raw.x;
+	// 	acc_err.y += acc_raw.y;
+	// 	acc_err.z += acc_raw.z - 1.0;
+	//
+	// 	if (acc_raw.z < 0.9) {
+	// 		ESP_LOGE(__FILE__, "Attitude calibration failed, plane not level");
+	// 		return ESP_FAIL;
+	// 	}
+	//
+	// 	gyr_err.x += gyr_raw.x;
+	// 	gyr_err.y += gyr_raw.y;
+	// 	gyr_err.z += gyr_raw.z;
+	// 	mag_err.x += mag_raw.x;
+	// 	mag_err.y += mag_raw.y;
+	// 	mag_err.z += mag_raw.z;
+	//
+	// 	delay_ms(CAL_DELAY);
+	// }
+	//
+	// // acc_err.x /= NUM_CAL_SAMPLES;
+	// // acc_err.y /= NUM_CAL_SAMPLES;
+	// // acc_err.z /= NUM_CAL_SAMPLES;
+	// acc_err.x = 0.0;
+	// acc_err.y = 0.0;
+	// acc_err.z = 0.0;
+	// gyr_err.x /= NUM_CAL_SAMPLES;
+	// gyr_err.y /= NUM_CAL_SAMPLES;
+	// gyr_err.z /= NUM_CAL_SAMPLES;
+	// // mag_err.x /= NUM_CAL_SAMPLES;
+	// // mag_err.y /= NUM_CAL_SAMPLES;
+	// // mag_err.z /= NUM_CAL_SAMPLES;
+	// mag_err.x /= 0.0;
+	// mag_err.y /= 0.0;
+	// mag_err.z /= 0.0;
+	//
+	// ESP_LOGI(__FILE__, "Attitude calibration success ...");
 
 	if (xTaskCreate(attitude_worker, "attitude_worker", 4096, NULL, 10, NULL) < 0) {
 		ESP_LOGE(__FILE__, "Cant start Attitude Worker");
@@ -270,31 +270,31 @@ void attitude_worker() {
 		mpu9250_gyr_data_t gyr_raw;
 		ak8963_mag_data_t mag_raw;
 
-		if (drv_mpu9250_read_acc_vec(&acc_raw) != ESP_OK) {
+		if (drv_mpu9250_read_acc(&acc_raw) != ESP_OK) {
 			ESP_LOGE(__FILE__, "Error while reading accelerometer data from mpu9250");
 		}
 
-		if (drv_mpu9250_read_gyr_vec(&gyr_raw) != ESP_OK) {
+		if (drv_mpu9250_read_gyr(&gyr_raw) != ESP_OK) {
 			ESP_LOGE(__FILE__, "Error while reading gyroscope data from mpu9250");
 		}
 
-		esp_err_t ret = drv_ak8963_read_mag_vec(&mag_raw);
+		esp_err_t ret = drv_ak8963_read_mag(&mag_raw);
 		if (ret != ESP_OK && ret != ESP_ERR_TIMEOUT) { // Ignore timeouts
 			ESP_LOGE(__FILE__, "Error while reading magnetometer data from mpu9250");
 		}
 
 		float acc[3] = {0.0};
-		acc[0] = (acc_raw.acc_x - acc_err.acc_x);
-		acc[1] = (acc_raw.acc_y - acc_err.acc_y);
-		acc[2] = (acc_raw.acc_z - acc_err.acc_z);
+		acc[0] = (acc_raw.x - acc_err.x);
+		acc[1] = (acc_raw.y - acc_err.y);
+		acc[2] = (acc_raw.z - acc_err.z);
 		float gyr[3] = {0.0};
-		gyr[0] = (gyr_raw.gyr_x - gyr_err.gyr_x)*PI/180.0;
-		gyr[1] = (gyr_raw.gyr_y - gyr_err.gyr_y)*PI/180.0;
-		gyr[2] = (gyr_raw.gyr_z - gyr_err.gyr_z)*PI/180.0;
+		gyr[0] = (gyr_raw.x - gyr_err.x)*PI/180.0;
+		gyr[1] = (gyr_raw.y - gyr_err.y)*PI/180.0;
+		gyr[2] = (gyr_raw.z - gyr_err.z)*PI/180.0;
 		float mag[3] = {0.0};
-		mag[0] = (mag_raw.mag_x /*- mag_err.mag_x*/)/100.0;
-		mag[1] = (mag_raw.mag_y /*- mag_err.mag_y*/)/100.0;
-		mag[2] = (mag_raw.mag_z /*- mag_err.mag_z*/)/100.0;
+		mag[0] = (mag_raw.x /*- mag_err.x*/)/100.0;
+		mag[1] = (mag_raw.y /*- mag_err.y*/)/100.0;
+		mag[2] = (mag_raw.z /*- mag_err.z*/)/100.0;
 
 		static float last_time = 0.0;
 		float delta_time = get_time_s() - last_time;
@@ -362,32 +362,32 @@ void attitude_test() {
 	// 	mpu9250_gyr_data_t gyr_raw;
 	// 	ak8963_mag_data_t mag_raw;
 	//
-	// 	drv_mpu9250_read_acc_vec(&acc_raw);
-	// 	drv_mpu9250_read_gyr_vec(&gyr_raw);
-	// 	drv_ak8963_read_mag_vec(&mag_raw);
+	// 	drv_mpu9250_read_acc(&acc_raw);
+	// 	drv_mpu9250_read_gyr(&gyr_raw);
+	// 	drv_ak8963_read_mag(&mag_raw);
 	//
-	// 	acc_err.acc_x += acc_raw.acc_x;
-	// 	acc_err.acc_y += acc_raw.acc_y;
-	// 	acc_err.acc_z += acc_raw.acc_z - 1.0;
-	// 	gyr_err.gyr_x += gyr_raw.gyr_x;
-	// 	gyr_err.gyr_y += gyr_raw.gyr_y;
-	// 	gyr_err.gyr_z += gyr_raw.gyr_z;
-	// 	mag_err.mag_x += mag_raw.mag_x;
-	// 	mag_err.mag_y += mag_raw.mag_y;
-	// 	mag_err.mag_z += mag_raw.mag_z;
+	// 	acc_err.x += acc_raw.x;
+	// 	acc_err.y += acc_raw.y;
+	// 	acc_err.z += acc_raw.z - 1.0;
+	// 	gyr_err.x += gyr_raw.x;
+	// 	gyr_err.y += gyr_raw.y;
+	// 	gyr_err.z += gyr_raw.z;
+	// 	mag_err.x += mag_raw.x;
+	// 	mag_err.y += mag_raw.y;
+	// 	mag_err.z += mag_raw.z;
 	//
 	// 	delay_ms(CAL_DELAY);
 	// }
 	//
-	// acc_err.acc_x /= NUM_CAL_SAMPLES;
-	// acc_err.acc_y /= NUM_CAL_SAMPLES;
-	// acc_err.acc_z /= NUM_CAL_SAMPLES;
-	// gyr_err.gyr_x /= NUM_CAL_SAMPLES;
-	// gyr_err.gyr_y /= NUM_CAL_SAMPLES;
-	// gyr_err.gyr_z /= NUM_CAL_SAMPLES;
-	// mag_err.mag_x /= NUM_CAL_SAMPLES;
-	// mag_err.mag_y /= NUM_CAL_SAMPLES;
-	// mag_err.mag_z /= NUM_CAL_SAMPLES;
+	// acc_err.x /= NUM_CAL_SAMPLES;
+	// acc_err.y /= NUM_CAL_SAMPLES;
+	// acc_err.z /= NUM_CAL_SAMPLES;
+	// gyr_err.x /= NUM_CAL_SAMPLES;
+	// gyr_err.y /= NUM_CAL_SAMPLES;
+	// gyr_err.z /= NUM_CAL_SAMPLES;
+	// mag_err.x /= NUM_CAL_SAMPLES;
+	// mag_err.y /= NUM_CAL_SAMPLES;
+	// mag_err.z /= NUM_CAL_SAMPLES;
 
 	while(1) {
 
@@ -399,19 +399,19 @@ void attitude_test() {
 		mpu9250_gyr_data_t gyr_raw;
 		ak8963_mag_data_t mag_raw;
 
-		drv_mpu9250_read_acc_vec(&acc_raw);
-		drv_mpu9250_read_gyr_vec(&gyr_raw);
-		drv_ak8963_read_mag_vec(&mag_raw);
+		drv_mpu9250_read_acc(&acc_raw);
+		drv_mpu9250_read_gyr(&gyr_raw);
+		drv_ak8963_read_mag(&mag_raw);
 
-		acc[0] = (acc_raw.acc_x - acc_err.acc_x);
-		acc[1] = (acc_raw.acc_y - acc_err.acc_y);
-		acc[2] = (acc_raw.acc_z - acc_err.acc_z);
-		gyr[0] = (gyr_raw.gyr_x - gyr_err.gyr_x)*PI/180.0;
-		gyr[1] = (gyr_raw.gyr_y - gyr_err.gyr_y)*PI/180.0;
-		gyr[2] = (gyr_raw.gyr_z - gyr_err.gyr_z)*PI/180.0;
-		mag[0] = (mag_raw.mag_x /*- mag_err.mag_x*/)/100.0;
-		mag[1] = (mag_raw.mag_y /*- mag_err.mag_y*/)/100.0;
-		mag[2] = (mag_raw.mag_z /*- mag_err.mag_z*/)/100.0;
+		acc[0] = (acc_raw.x - acc_err.x);
+		acc[1] = (acc_raw.y - acc_err.y);
+		acc[2] = (acc_raw.z - acc_err.z);
+		gyr[0] = (gyr_raw.x - gyr_err.x)*PI/180.0;
+		gyr[1] = (gyr_raw.y - gyr_err.y)*PI/180.0;
+		gyr[2] = (gyr_raw.z - gyr_err.z)*PI/180.0;
+		mag[0] = (mag_raw.x /*- mag_err.x*/)/100.0;
+		mag[1] = (mag_raw.y /*- mag_err.y*/)/100.0;
+		mag[2] = (mag_raw.z /*- mag_err.z*/)/100.0;
 
 		printf("Acc: %8.5f, %8.5f, %8.5f, ", acc[0], acc[1], acc[2]);
 		printf("Gyr: %8.5f, %8.5f, %8.5f, ", gyr[0], gyr[1], gyr[2]);
@@ -430,18 +430,18 @@ void attitude_test() {
 		// printf("Temp: %.2f \n", drv_mpu9250_read_temp());
 
 		// mpu9250_acc_data_t acc;
-		// drv_mpu9250_read_acc_vec(&acc);
-		// printf("acc_x %f, acc_y %f, acc_z %f \n", acc.acc_x, acc.acc_y, acc.acc_z);
-
+		// drv_mpu9250_read_acc(&acc);
+		// printf("acc x %10.5f, y %10.5f, z %10.5f ", acc.x, acc.y, acc.z);
+		//
 		// mpu9250_gyr_data_t gyr;
-		// drv_mpu9250_read_gyr_vec(&gyr);
-		// printf("gyr_x %f, gyr_y %f, gyr_z %f \n", gyr.gyr_x, gyr.gyr_y, gyr.gyr_z);
-
+		// drv_mpu9250_read_gyr(&gyr);
+		// printf("gyr x %10.5f, y %10.5f, z %10.5f ", gyr.x, gyr.y, gyr.z);
+		//
 		// ak8963_mag_data_t mag;
-		// drv_ak8963_read_mag_vec(&mag);
-		// printf("mag_x %f, mag_y %f, mag_z %f \n", mag.mag_x, mag.mag_y, mag.mag_z);
+		// drv_ak8963_read_mag(&mag);
+		// printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f ", mag.x, mag.y, mag.z, get_time_s());
 
-		// printf("Press: %.2f, Temp: %.2f \n", bmp280_get_press(), bmp280_get_temp());
+		// printf("Press: %5.2f, Temp: %5.2f \n", bmp280_get_press(), bmp280_get_temp());
 
 		delay_ms(10);
 	}

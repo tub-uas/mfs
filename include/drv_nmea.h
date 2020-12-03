@@ -72,7 +72,7 @@ typedef struct {
 	uint8_t sats_in_view;                                          /*!< Number of satellites in view */
 	gps_satellite_t sats_desc_in_view[GPS_MAX_SATELLITES_IN_VIEW]; /*!< Information of satellites in view */
 	gps_date_t date;                                               /*!< Fix date */
-	bool valid;                                                    /*!< GPS validity */
+	uint8_t valid;                                                 /*!< GPS validity */
 	float speed;                                                   /*!< Ground speed, unit: m/s */
 	float cog;                                                     /*!< Course over ground */
 	float variation;                                               /*!< Magnetic variation */

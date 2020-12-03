@@ -43,46 +43,46 @@
 
 void app_main() {
 
-	/* Let the system settle down */
-	delay_ms(10);
+	delay_ms(10); /* Let the system settle down */
 
 	ESP_LOGI(__FILE__, "================= Starting System =================");
 
-	ESP_ERROR_CHECK(board_check());
+	ESP_ERROR_CHECK(board_check()); /* Check that software matches hardware */
 
 	#if defined(RAI_BOARD)
 		ESP_LOGI(__FILE__, "Board type is RAI");
 		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
-		ESP_ERROR_CHECK(drv_button_init());
-		ESP_ERROR_CHECK(drv_sense_init());
-		ESP_ERROR_CHECK(drv_pwm_init());
+		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
+		ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
+		ESP_ERROR_CHECK(drv_pwm_init()); /* Configure pwm servo outputs */
 		ESP_ERROR_CHECK(drv_sumd_init()); /* Starts SUMD worker */
-		ESP_ERROR_CHECK(can_com_rai_init());
+		ESP_ERROR_CHECK(can_com_rai_init()); /* Init rai can interface */
 
 	#elif defined(PSU_BOARD)
 		ESP_LOGI(__FILE__, "Board type is PSU");
-		ESP_ERROR_CHECK(drv_led_init());  /* Starts LED worker */
-		ESP_ERROR_CHECK(drv_button_init());
-		ESP_ERROR_CHECK(drv_sense_ext_init());
-		ESP_ERROR_CHECK(can_com_psu_init());
+		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
+		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
+		ESP_ERROR_CHECK(drv_sense_ext_init()); /* Starts psu voltage and current meas. */
+		ESP_ERROR_CHECK(can_com_psu_init(0)); /* Only transmit psu data */
 
 	#elif defined(AHRS_BOARD)
 		ESP_LOGI(__FILE__, "Board type is AHRS");
-		ESP_ERROR_CHECK(drv_led_init());  /* Starts LED worker */
-		ESP_ERROR_CHECK(drv_button_init());
-		ESP_ERROR_CHECK(drv_sense_init());
-		ESP_ERROR_CHECK(drv_mpu9250_init());
-		ESP_ERROR_CHECK(drv_ak8963_init());
-		ESP_ERROR_CHECK(drv_bmp280_init());
-		ESP_ERROR_CHECK(can_com_ahrs_init());
+		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
+		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
+		ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
+		ESP_ERROR_CHECK(can_com_psu_init(1)); /* Is able to receive psu data */
+		ESP_ERROR_CHECK(drv_mpu9250_init()); /* Accel and gyro init */
+		ESP_ERROR_CHECK(drv_ak8963_init()); /* Magnetometer init */
+		ESP_ERROR_CHECK(drv_bmp280_init()); /* Barometer init */
+		ESP_ERROR_CHECK(can_com_ahrs_init()); /* Init ahrs can interface */
 		// ESP_ERROR_CHECK(attitude_init()); /* Starts attitude worker */
 
 	#elif defined(GPS_BOARD)
 		ESP_LOGI(__FILE__, "Board type is GPS");
-		ESP_ERROR_CHECK(drv_led_init());  /* Starts LED worker */
-		ESP_ERROR_CHECK(drv_button_init());
-		ESP_ERROR_CHECK(drv_sense_init());
-		ESP_ERROR_CHECK(can_com_gps_init());
+		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
+		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
+		ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
+		ESP_ERROR_CHECK(can_com_gps_init()); /* Init gps can interface */
 
 	#endif
 

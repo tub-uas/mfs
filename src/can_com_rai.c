@@ -19,10 +19,10 @@
 #include "drv_can.h"
 #include "util.h"
 
-uint32_t in_ids[] = {CAN_ID_FCC_DATA0,
-                     CAN_ID_FCC_DATA1,
-                     CAN_ID_FCC_DATA2,
-                     CAN_ID_FCC_DATA3};
+static uint32_t in_ids[] = {CAN_ID_FCC_DATA0,
+                            CAN_ID_FCC_DATA1,
+                            CAN_ID_FCC_DATA2,
+                            CAN_ID_FCC_DATA3};
 
 static can_com_rai_t can_com_rai_data;
 static SemaphoreHandle_t can_com_rai_sem = NULL;

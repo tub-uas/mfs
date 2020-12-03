@@ -18,8 +18,12 @@ typedef struct {
 	float sense_time;
 } can_com_psu_t;
 
-esp_err_t can_com_psu_init();
+esp_err_t can_com_psu_init(uint8_t receive);
 
 esp_err_t can_com_psu_send(can_com_psu_t data);
+
+esp_err_t can_com_psu_get(can_com_psu_t *data);
+
+esp_err_t can_com_psu_recv(can_com_psu_t *data);
 
 #endif // CAN_COM_PSU_H

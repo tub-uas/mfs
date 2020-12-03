@@ -132,9 +132,9 @@ esp_err_t drv_ak8963_read_mag_native(ak8963_mag_data_t *mag) {
 		mag_tmp[0] = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
 		mag_tmp[1] = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
 		mag_tmp[2] = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
-		mag->x = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
-		mag->y = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
-		mag->z = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
+// 		mag->x = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
+// 		mag->y = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
+// 		mag->z = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
 
 		/* Compensate for hard-iron errors */
 		mag_tmp[0] -= hard_iron_err.x;

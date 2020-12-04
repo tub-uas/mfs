@@ -17,7 +17,7 @@
 
 #define TIME_ZONE (+2)   // Berlin
 
-atomic_uint last_valid_sample_time = 0;
+static atomic_uint last_valid_sample_time = 0;
 
 static can_com_gps_t data;
 static SemaphoreHandle_t gps_data_sem = NULL;

@@ -28,9 +28,8 @@ static const float gain_values [] = {
 };
 
 static i2c_device_t hmc5883;
-drv_hmc5883_opmode_t opmode;
+static drv_hmc5883_opmode_t opmode;
 float gain = gain_values[HMC5883L_GAIN_1090];
-
 
 esp_err_t drv_hmc5883_init() {
 

@@ -14,6 +14,7 @@
 #include "util.h"
 
 esp_err_t drv_i2c_init(i2c_device_t dev) {
+	
 	ESP_LOGI(__FILE__, "Init I2C device, address: %02x \n", dev.addr);
 
 	i2c_config_t conf;

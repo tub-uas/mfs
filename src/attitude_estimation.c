@@ -223,24 +223,27 @@ void attitude_worker() {
 
 		ak8963_mag_data_t mag;
 		memset(&mag, 0, sizeof(mag));
+		static ak8963_mag_data_t last_mag;
 		esp_err_t ret = drv_ak8963_read_mag(&mag);
-		if (ret != ESP_OK && ret != ESP_ERR_TIMEOUT) { // Ignore timeouts
+		if (ret == ESP_ERR_TIMEOUT) {
+			memcpy(&mag, &last_mag, sizeof(mag));
+		} else if (ret != ESP_OK) {
 			ESP_LOGE(__FILE__, "Could not read magnetometer data from mpu9250");
+		} else {
+			last_mag = mag;
 		}
+
 		// printf("acc x %10.5f, y %10.5f, z %10.5f ", acc.x, acc.y, acc.z);
 		// printf("gyr x %10.5f, y %10.5f, z %10.5f ", gyr.x, gyr.y, gyr.z);
 		// printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f \n", mag.x, mag.y, mag.z, get_time_s());
-		printf("acc x %10.5f, y %10.5f, z %10.5f ", ((float*)&acc)[0], ((float*)&acc)[1], ((float*)&acc)[2]);
-		printf("gyr x %10.5f, y %10.5f, z %10.5f ", ((float*)&gyr)[0], ((float*)&gyr)[1], ((float*)&gyr)[2]);
-		printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f \n", ((float*)&mag)[0], ((float*)&mag)[1], ((float*)&mag)[2], get_time_s());
-
+		
 		static float last_time = 0.0;
 		float delta_time = get_time_s() - last_time;
 		last_time = get_time_s();
 
 		float att[3] = {0.0};
 		attitude_est((float*)&acc, (float*)&gyr, (float*)&mag, att, delta_time);
-		// printf("Att: %10.5f, %10.5f, %10.5f \n", att[0], att[1], att[2]);
+		printf("Att: %10.5f, %10.5f, %10.5f \n", att[0], att[1], att[2]);
 
 		float temp = bmp280_get_temp();
 		float press = bmp280_get_press();
@@ -322,60 +325,60 @@ void attitude_test() {
 	// mag_err.y /= NUM_CAL_SAMPLES;
 	// mag_err.z /= NUM_CAL_SAMPLES;
 
-	while(1) {
-
-		float acc[3];
-		float gyr[3];
-		float mag[3];
-
-		mpu9250_acc_data_t acc_raw;
-		mpu9250_gyr_data_t gyr_raw;
-		ak8963_mag_data_t mag_raw;
-
-		drv_mpu9250_read_acc(&acc_raw);
-		drv_mpu9250_read_gyr(&gyr_raw);
-		drv_ak8963_read_mag(&mag_raw);
-
-		acc[0] = (acc_raw.x - acc_err.x);
-		acc[1] = (acc_raw.y - acc_err.y);
-		acc[2] = (acc_raw.z - acc_err.z);
-		gyr[0] = (gyr_raw.x - gyr_err.x)*PI/180.0;
-		gyr[1] = (gyr_raw.y - gyr_err.y)*PI/180.0;
-		gyr[2] = (gyr_raw.z - gyr_err.z)*PI/180.0;
-		mag[0] = (mag_raw.x /*- mag_err.x*/)/100.0;
-		mag[1] = (mag_raw.y /*- mag_err.y*/)/100.0;
-		mag[2] = (mag_raw.z /*- mag_err.z*/)/100.0;
-
-		printf("Acc: %8.5f, %8.5f, %8.5f, ", acc[0], acc[1], acc[2]);
-		printf("Gyr: %8.5f, %8.5f, %8.5f, ", gyr[0], gyr[1], gyr[2]);
-		printf("Mag: %8.5f, %8.5f, %8.5f, ", mag[0], mag[1], mag[2]);
-
-		static float last_time;
-		float delta_time = get_time_s() - last_time;
-		last_time = get_time_s();
-
-		float att[3];
-		attitude_est(acc, gyr, mag, att, delta_time);
-		printf("Att: %10.5f, %10.5f, %10.5f \n", att[0]*180/PI, att[1]*180/PI, att[2]*180/PI);
-
-		// printf("Delta Time: %.4f \n", delta_time);
-
-		// printf("Temp: %.2f \n", drv_mpu9250_read_temp());
-
-		// mpu9250_acc_data_t acc;
-		// drv_mpu9250_read_acc(&acc);
-		// printf("acc x %10.5f, y %10.5f, z %10.5f ", acc.x, acc.y, acc.z);
-		//
-		// mpu9250_gyr_data_t gyr;
-		// drv_mpu9250_read_gyr(&gyr);
-		// printf("gyr x %10.5f, y %10.5f, z %10.5f ", gyr.x, gyr.y, gyr.z);
-		//
-		// ak8963_mag_data_t mag;
-		// drv_ak8963_read_mag(&mag);
-		// printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f ", mag.x, mag.y, mag.z, get_time_s());
-
-		// printf("Press: %5.2f, Temp: %5.2f \n", bmp280_get_press(), bmp280_get_temp());
-
-		delay_ms(10);
-	}
+	// while(1) {
+	//
+	// 	float acc[3];
+	// 	float gyr[3];
+	// 	float mag[3];
+	//
+	// 	mpu9250_acc_data_t acc_raw;
+	// 	mpu9250_gyr_data_t gyr_raw;
+	// 	ak8963_mag_data_t mag_raw;
+	//
+	// 	drv_mpu9250_read_acc(&acc_raw);
+	// 	drv_mpu9250_read_gyr(&gyr_raw);
+	// 	drv_ak8963_read_mag(&mag_raw);
+	//
+	// 	acc[0] = (acc_raw.x - acc_err.x);
+	// 	acc[1] = (acc_raw.y - acc_err.y);
+	// 	acc[2] = (acc_raw.z - acc_err.z);
+	// 	gyr[0] = (gyr_raw.x - gyr_err.x)*PI/180.0;
+	// 	gyr[1] = (gyr_raw.y - gyr_err.y)*PI/180.0;
+	// 	gyr[2] = (gyr_raw.z - gyr_err.z)*PI/180.0;
+	// 	mag[0] = (mag_raw.x /*- mag_err.x*/)/100.0;
+	// 	mag[1] = (mag_raw.y /*- mag_err.y*/)/100.0;
+	// 	mag[2] = (mag_raw.z /*- mag_err.z*/)/100.0;
+	//
+	// 	printf("Acc: %8.5f, %8.5f, %8.5f, ", acc[0], acc[1], acc[2]);
+	// 	printf("Gyr: %8.5f, %8.5f, %8.5f, ", gyr[0], gyr[1], gyr[2]);
+	// 	printf("Mag: %8.5f, %8.5f, %8.5f, ", mag[0], mag[1], mag[2]);
+	//
+	// 	static float last_time;
+	// 	float delta_time = get_time_s() - last_time;
+	// 	last_time = get_time_s();
+	//
+	// 	float att[3];
+	// 	attitude_est(acc, gyr, mag, att, delta_time);
+	// 	printf("Att: %10.5f, %10.5f, %10.5f \n", att[0]*180/PI, att[1]*180/PI, att[2]*180/PI);
+	//
+	// 	// printf("Delta Time: %.4f \n", delta_time);
+	//
+	// 	// printf("Temp: %.2f \n", drv_mpu9250_read_temp());
+	//
+	// 	// mpu9250_acc_data_t acc;
+	// 	// drv_mpu9250_read_acc(&acc);
+	// 	// printf("acc x %10.5f, y %10.5f, z %10.5f ", acc.x, acc.y, acc.z);
+	// 	//
+	// 	// mpu9250_gyr_data_t gyr;
+	// 	// drv_mpu9250_read_gyr(&gyr);
+	// 	// printf("gyr x %10.5f, y %10.5f, z %10.5f ", gyr.x, gyr.y, gyr.z);
+	// 	//
+	// 	// ak8963_mag_data_t mag;
+	// 	// drv_ak8963_read_mag(&mag);
+	// 	// printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f ", mag.x, mag.y, mag.z, get_time_s());
+	//
+	// 	// printf("Press: %5.2f, Temp: %5.2f \n", bmp280_get_press(), bmp280_get_temp());
+	//
+	// 	delay_ms(10);
+	// }
 }

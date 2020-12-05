@@ -17,6 +17,7 @@
 #include "drv_bmp280.h"
 #include "drv_mpu9250.h"
 #include "drv_led.h"
+#include "can_com_psu.h"
 #include "util_vecmath.h"
 #include "util_quaternion.h"
 #include "util.h"
@@ -28,14 +29,8 @@
 #define SQRT2           1.41421356237f
 #define INVSQRT2        0.70771067811f
 
-
 static can_com_ahrs_t ahrs_data;
 static SemaphoreHandle_t ahrs_sem = NULL;
-
-static mpu9250_acc_data_t acc_err;
-static mpu9250_gyr_data_t gyr_err;
-// static ak8963_mag_data_t  mag_err;
-
 
 esp_err_t attitude_init() {
 
@@ -47,60 +42,6 @@ esp_err_t attitude_init() {
 		return ESP_FAIL;
 	}
 
-	// ESP_LOGI(__FILE__, "Attitude calibrating sensors ...");
-	//
-	// delay_ms(1000);
-	//
-	// #define NUM_CAL_SAMPLES 100
-	// #define CAL_DELAY       10
-	//
-	// for (uint32_t i=0; i<NUM_CAL_SAMPLES; i++) {
-	//
-	// 	mpu9250_acc_data_t acc_raw;
-	// 	mpu9250_gyr_data_t gyr_raw;
-	// 	ak8963_mag_data_t mag_raw;
-	//
-	// 	drv_mpu9250_read_acc(&acc_raw);
-	// 	drv_mpu9250_read_gyr(&gyr_raw);
-	// 	drv_ak8963_read_mag(&mag_raw);
-	//
-	// 	acc_err.x += acc_raw.x;
-	// 	acc_err.y += acc_raw.y;
-	// 	acc_err.z += acc_raw.z - 1.0;
-	//
-	// 	if (acc_raw.z < 0.9) {
-	// 		ESP_LOGE(__FILE__, "Attitude calibration failed, plane not level");
-	// 		return ESP_FAIL;
-	// 	}
-	//
-	// 	gyr_err.x += gyr_raw.x;
-	// 	gyr_err.y += gyr_raw.y;
-	// 	gyr_err.z += gyr_raw.z;
-	// 	mag_err.x += mag_raw.x;
-	// 	mag_err.y += mag_raw.y;
-	// 	mag_err.z += mag_raw.z;
-	//
-	// 	delay_ms(CAL_DELAY);
-	// }
-	//
-	// // acc_err.x /= NUM_CAL_SAMPLES;
-	// // acc_err.y /= NUM_CAL_SAMPLES;
-	// // acc_err.z /= NUM_CAL_SAMPLES;
-	// acc_err.x = 0.0;
-	// acc_err.y = 0.0;
-	// acc_err.z = 0.0;
-	// gyr_err.x /= NUM_CAL_SAMPLES;
-	// gyr_err.y /= NUM_CAL_SAMPLES;
-	// gyr_err.z /= NUM_CAL_SAMPLES;
-	// // mag_err.x /= NUM_CAL_SAMPLES;
-	// // mag_err.y /= NUM_CAL_SAMPLES;
-	// // mag_err.z /= NUM_CAL_SAMPLES;
-	// mag_err.x /= 0.0;
-	// mag_err.y /= 0.0;
-	// mag_err.z /= 0.0;
-	//
-	// ESP_LOGI(__FILE__, "Attitude calibration success ...");
-
 	if (xTaskCreate(attitude_worker, "attitude_worker", 4096, NULL, 10, NULL) < 0) {
 		ESP_LOGE(__FILE__, "Cant start Attitude Worker");
 		return ESP_FAIL;
@@ -108,7 +49,6 @@ esp_err_t attitude_init() {
 
 	return ESP_OK;
 }
-
 
 float adaptive_gain(float err_acc) {
 
@@ -120,7 +60,6 @@ float adaptive_gain(float err_acc) {
 		return (ADAPTUPPBOUND - err_acc)/(ADAPTLOWBOUND) * (1.0-ADAPTGYROGAIN);
 	}
 }
-
 
 void attitude_acc_q(float acc[3], float q_res[4]) {
 
@@ -143,7 +82,6 @@ void attitude_acc_q(float acc[3], float q_res[4]) {
 
 	quaternion_norm(q_res, q_res);
 }
-
 
 void attitude_acc_mag_q(float acc_q[4],float mag[3], float mag_res_q[4], float acc_mag_q[4]) {
 
@@ -179,7 +117,6 @@ void attitude_acc_mag_q(float acc_q[4],float mag[3], float mag_res_q[4], float a
 	quaternion_norm(acc_mag_q, acc_mag_q);
 }
 
-
 void attitude_gyro_q(float gyr[3], float est_q[4],float gyr_q[4], float millis_delta) {
 
 	float angular = millis_delta*sqrt(gyr[0]*gyr[0] + gyr[1]*gyr[1] + gyr[2]*gyr[2]);
@@ -197,7 +134,6 @@ void attitude_gyro_q(float gyr[3], float est_q[4],float gyr_q[4], float millis_d
 	quaternion_norm(gyr_q, gyr_q);
 }
 
-
 void attitude_quat_eul_conv(float Q[4],float att[3]) {
 
 	float arg = (-2.0) * (Q[0]*Q[2]+Q[1]*Q[3]);
@@ -207,7 +143,6 @@ void attitude_quat_eul_conv(float Q[4],float att[3]) {
 	att[1] = asin(arg);
 	att[2] = atan2( 2*(Q[1]*Q[2]-Q[0]*Q[3]), 1-2*(Q[2]*Q[2]+Q[3]*Q[3]) ) + 0.06370;
 }
-
 
 void attitude_est(float acc[3], float gyr[3], float mag[3], float att[3], float millis_delta) {
 
@@ -244,7 +179,6 @@ void attitude_est(float acc[3], float gyr[3], float mag[3], float att[3], float 
 	attitude_quat_eul_conv(est_q, att);
 }
 
-
 esp_err_t get_attitude(can_com_ahrs_t *data) {
 
 	if (xSemaphoreTake(ahrs_sem, 10 / portTICK_PERIOD_MS) == true) {
@@ -266,67 +200,67 @@ void attitude_worker() {
 
 	while (1) {
 
-		mpu9250_acc_data_t acc_raw;
-		mpu9250_gyr_data_t gyr_raw;
-		ak8963_mag_data_t mag_raw;
+		can_com_psu_t psu_data;
+		memset(&psu_data, 0, sizeof(psu_data));
+		if (can_com_psu_get(&psu_data) != ESP_OK) {
+			ESP_LOGE(__FILE__, "Could not get PSU data from CAN");
+		}
+		// printf("Main %5.2f %5.2f %5.2f   ", psu_data.sense_main_volt, psu_data.sense_main_curr, psu_data.sense_main_pow);
+		// printf("Pwr  %5.2f %5.2f %5.2f   ", psu_data.sense_pwr_volt, psu_data.sense_pwr_curr, psu_data.sense_pwr_pow);
+		// printf("sys  %5.2f %5.2f %5.2f \n", psu_data.sense_sys_volt, psu_data.sense_sys_curr, psu_data.sense_sys_pow);
 
-		if (drv_mpu9250_read_acc(&acc_raw) != ESP_OK) {
-			ESP_LOGE(__FILE__, "Error while reading accelerometer data from mpu9250");
+		mpu9250_acc_data_t acc;
+		memset(&acc, 0, sizeof(acc));
+		if (drv_mpu9250_read_acc(&acc) != ESP_OK) {
+			ESP_LOGE(__FILE__, "Could not read accelerometer data from mpu9250");
 		}
 
-		if (drv_mpu9250_read_gyr(&gyr_raw) != ESP_OK) {
-			ESP_LOGE(__FILE__, "Error while reading gyroscope data from mpu9250");
+		mpu9250_gyr_data_t gyr;
+		memset(&gyr, 0, sizeof(gyr));
+		if (drv_mpu9250_read_gyr(&gyr) != ESP_OK) {
+			ESP_LOGE(__FILE__, "Could not read gyroscope data from mpu9250");
 		}
 
-		esp_err_t ret = drv_ak8963_read_mag(&mag_raw);
+		ak8963_mag_data_t mag;
+		memset(&mag, 0, sizeof(mag));
+		esp_err_t ret = drv_ak8963_read_mag(&mag);
 		if (ret != ESP_OK && ret != ESP_ERR_TIMEOUT) { // Ignore timeouts
-			ESP_LOGE(__FILE__, "Error while reading magnetometer data from mpu9250");
+			ESP_LOGE(__FILE__, "Could not read magnetometer data from mpu9250");
 		}
-
-		float acc[3] = {0.0};
-		acc[0] = (acc_raw.x - acc_err.x);
-		acc[1] = (acc_raw.y - acc_err.y);
-		acc[2] = (acc_raw.z - acc_err.z);
-		float gyr[3] = {0.0};
-		gyr[0] = (gyr_raw.x - gyr_err.x)*PI/180.0;
-		gyr[1] = (gyr_raw.y - gyr_err.y)*PI/180.0;
-		gyr[2] = (gyr_raw.z - gyr_err.z)*PI/180.0;
-		float mag[3] = {0.0};
-		mag[0] = (mag_raw.x /*- mag_err.x*/)/100.0;
-		mag[1] = (mag_raw.y /*- mag_err.y*/)/100.0;
-		mag[2] = (mag_raw.z /*- mag_err.z*/)/100.0;
+		// printf("acc x %10.5f, y %10.5f, z %10.5f ", acc.x, acc.y, acc.z);
+		// printf("gyr x %10.5f, y %10.5f, z %10.5f ", gyr.x, gyr.y, gyr.z);
+		// printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f \n", mag.x, mag.y, mag.z, get_time_s());
+		printf("acc x %10.5f, y %10.5f, z %10.5f ", ((float*)&acc)[0], ((float*)&acc)[1], ((float*)&acc)[2]);
+		printf("gyr x %10.5f, y %10.5f, z %10.5f ", ((float*)&gyr)[0], ((float*)&gyr)[1], ((float*)&gyr)[2]);
+		printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f \n", ((float*)&mag)[0], ((float*)&mag)[1], ((float*)&mag)[2], get_time_s());
 
 		static float last_time = 0.0;
 		float delta_time = get_time_s() - last_time;
 		last_time = get_time_s();
 
 		float att[3] = {0.0};
-		attitude_est(acc, gyr, mag, att, delta_time);
+		attitude_est((float*)&acc, (float*)&gyr, (float*)&mag, att, delta_time);
+		// printf("Att: %10.5f, %10.5f, %10.5f \n", att[0], att[1], att[2]);
 
 		float temp = bmp280_get_temp();
 		float press = bmp280_get_press();
-
-		// printf("Acc: %8.5f, %8.5f, %8.5f, ", acc[0], acc[1], acc[2]);
-		// printf("Gyr: %8.5f, %8.5f, %8.5f, ", gyr[0], gyr[1], gyr[2]);
-		// printf("Mag: %8.5f, %8.5f, %8.5f, ", mag[0], mag[1], mag[2]);
-		// printf("Att: %10.5f, %10.5f, %10.5f, ", att[0], att[1], att[2]);
-		// printf("Temp: %.2f, Press: %.2f \n", temp, press);
+		// printf("Temp: %10.2f, Press: %5.2f \n", temp, press);
 
 		if (xSemaphoreTake(ahrs_sem, 10 / portTICK_PERIOD_MS) == true) {
 
 			ahrs_data.time = last_time;
 
-			ahrs_data.acc[0] = acc[0];
-			ahrs_data.acc[1] = acc[1];
-			ahrs_data.acc[2] = acc[2];
+			ahrs_data.acc[0] = acc.x;
+			ahrs_data.acc[1] = acc.y;
+			ahrs_data.acc[2] = acc.z;
 
-			ahrs_data.gyr[0] = gyr[0];
-			ahrs_data.gyr[1] = gyr[1];
-			ahrs_data.gyr[2] = gyr[2];
+			ahrs_data.gyr[0] = gyr.x;
+			ahrs_data.gyr[1] = gyr.y;
+			ahrs_data.gyr[2] = gyr.z;
 
-			ahrs_data.mag[0] = mag[0];
-			ahrs_data.mag[1] = mag[1];
-			ahrs_data.mag[2] = mag[2];
+			ahrs_data.mag[0] = mag.x;
+			ahrs_data.mag[1] = mag.y;
+			ahrs_data.mag[2] = mag.z;
 
 			ahrs_data.att[0] = att[0];
 			ahrs_data.att[1] = att[1];
@@ -344,7 +278,6 @@ void attitude_worker() {
 		delay_until_ms(&last_wake_time, 10);
 	}
 }
-
 
 void attitude_test() {
 

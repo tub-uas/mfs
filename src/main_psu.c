@@ -53,6 +53,7 @@ void main_psu() {
 		    data.sense_sys_volt < 4.95) {
 
 			drv_led_set(LED_FAST);
+
 			printf("Main %10f Pwr %10f Sys %10f \n", data.sense_main_volt, data.sense_pwr_volt, data.sense_sys_volt);
 
 		} else {
@@ -61,6 +62,6 @@ void main_psu() {
 
 		can_com_psu_send(data);
 
-		delay_until_ms(&last_wake_time, 100);
+		delay_until_ms(&last_wake_time, 10);
 	}
 }

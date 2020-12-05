@@ -167,29 +167,17 @@ esp_err_t drv_bmp280_read_coeff(bmp280_calib_t *cal) {
 	drv_i2c_read_bytes(bmp280, BMP280_REGP9, SIZECOEFFREG, read);
 	cal->dig_P9 = (int16_t)(read[1]<<8) | read[0];
 
-	// ESP_LOGI(__FILE__, "DIG_T1 %hu", cal->dig_T1);
-	// ESP_LOGI(__FILE__, "DIG_T2 %hd", cal->dig_T2);
-	// ESP_LOGI(__FILE__, "DIG_T3 %hd", cal->dig_T3);
-	//
-	// ESP_LOGI(__FILE__, "DIG_P1 %hu", cal->dig_P1);
-	// ESP_LOGI(__FILE__, "DIG_P2 %hd", cal->dig_P2);
-	// ESP_LOGI(__FILE__, "DIG_P3 %hd", cal->dig_P3);
-	// ESP_LOGI(__FILE__, "DIG_P4 %hd", cal->dig_P4);
-	// ESP_LOGI(__FILE__, "DIG_P5 %hd", cal->dig_P5);
-	// ESP_LOGI(__FILE__, "DIG_P6 %hd", cal->dig_P6);
-	// ESP_LOGI(__FILE__, "DIG_P7 %hd", cal->dig_P7);
-	// ESP_LOGI(__FILE__, "DIG_P8 %hd", cal->dig_P8);
-	// ESP_LOGI(__FILE__, "DIG_P9 %hd", cal->dig_P9);
-
 	return ESP_OK;
 }
 
+/* Returns the temperature in °c (degree celsius) */
 double bmp280_get_temp() {
 
 	static int32_t temp_calib;
 	return bmp280_get_temp_raw(&temp_calib, bmp280_calib);
 }
 
+/* Returns the ambient pressure in TODO */
 double bmp280_get_press() {
 
 	static int32_t temp_calib;
@@ -246,6 +234,7 @@ double bmp280_get_press_raw(int32_t *t_data, bmp280_calib_t cal) {
 	if (var3 == 0.0) {
 		return 0; // avoid exception caused by division by zero
 	}
+
 	p = 1048576.0 - (double)adc_P;
 	p = (p - (var4 / 4096.0)) * 6250.0/var3;
 	var3 = ((double)cal.dig_P9) * p * p / 2147483648.0;

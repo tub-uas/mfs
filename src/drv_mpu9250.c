@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -61,6 +62,7 @@ esp_err_t drv_mpu9250_init() {
 	delay_ms(10);
 	ret_mpu9250 |= drv_mpu9250_enable_sensors();
 	delay_ms(100);
+	ESP_LOGI(__FILE__,"Calibrating MPU9250 ...");
 	ret_mpu9250 |= drv_mpu9250_calibrate(&gyr_bias_err);
 
 	// printf("gyr_bias_err x %10.5f, y %10.5f, z %10.5f \n",
@@ -224,6 +226,8 @@ esp_err_t drv_mpu9250_read_acc_native(mpu9250_acc_data_t *acc) {
 	return ESP_OK;
 }
 
+/* Returns the orientation and scale corrected accelerometer data
+   on all three axis in g (multiple of 9.80665m/s^2). */
 esp_err_t drv_mpu9250_read_acc(mpu9250_acc_data_t *acc) {
 
 	mpu9250_acc_data_t acc_tmp;
@@ -257,6 +261,11 @@ esp_err_t drv_mpu9250_read_gyr_native(mpu9250_gyr_data_t *gyr) {
 	gyr->y = (int16_t)(((uint16_t)raw[2] << 8) | raw[3]) * gyr_scale_val;
 	gyr->z = (int16_t)(((uint16_t)raw[4] << 8) | raw[5]) * gyr_scale_val;
 
+	/* Convert from degree to rad */
+	gyr->x *= M_PI/360.0;
+	gyr->y *= M_PI/360.0;
+	gyr->z *= M_PI/360.0;
+
 	/* Bias error correction */
 	gyr->x -= gyr_bias_err.x;
 	gyr->y -= gyr_bias_err.y;
@@ -265,6 +274,8 @@ esp_err_t drv_mpu9250_read_gyr_native(mpu9250_gyr_data_t *gyr) {
 	return ESP_OK;
 }
 
+/* Returns the orientation and bias corrected gyroscope data
+   on all three axis in rad/s (rad per second). */
 esp_err_t drv_mpu9250_read_gyr(mpu9250_gyr_data_t *gyr) {
 
 	mpu9250_gyr_data_t gyr_tmp;
@@ -320,6 +331,7 @@ esp_err_t drv_mpu9250_calibrate(mpu9250_gyr_data_t *gyr) {
 	return ESP_OK;
 }
 
+/* Returns the temperature in °c (degree celsius) */
 float drv_mpu9250_read_temp() {
 	uint8_t tmp[2] = {0};
 	drv_i2c_read_bytes(mpu9250, TEMP_OUT_H, 2, tmp);

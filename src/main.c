@@ -70,12 +70,14 @@ void app_main() {
 		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
 		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
 		ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
-		ESP_ERROR_CHECK(can_com_psu_init(1)); /* Is able to receive psu data */
 		ESP_ERROR_CHECK(drv_mpu9250_init()); /* Accel and gyro init */
 		ESP_ERROR_CHECK(drv_ak8963_init()); /* Magnetometer init */
 		ESP_ERROR_CHECK(drv_bmp280_init()); /* Barometer init */
-		ESP_ERROR_CHECK(can_com_ahrs_init()); /* Init ahrs can interface */
-		// ESP_ERROR_CHECK(attitude_init()); /* Starts attitude worker */
+		ESP_ERROR_CHECK(can_com_psu_init(1)); /* Is able to receive psu data */
+		/* CAN init is already done by can_com_psu_init */
+		/* ESP_ERROR_CHECK(can_com_ahrs_init()); Don't call can_com_ahrs_init */
+		/* ESP_ERROR_CHECK(can_com_gps_init()); Don't call can_com_gps_init */
+		ESP_ERROR_CHECK(attitude_init()); /* Starts attitude worker */
 
 	#elif defined(GPS_BOARD)
 		ESP_LOGI(__FILE__, "Board type is GPS");

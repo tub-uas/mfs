@@ -1,5 +1,6 @@
 #include "drv_ak8963.h"
 #include "drv_ak_regs.h"
+#include "drv_ak8963_const.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -17,6 +18,9 @@
 #include "util.h"
 #include "util_vecmath.h"
 
+/* !!! If CALIBRATION activated, ensure orientation is set to NATIVE_ORIENT !!! */
+#define CALIBRATION
+
 /* AK8963 I2C device */
 static i2c_device_t ak8963;
 
@@ -24,10 +28,12 @@ static i2c_device_t ak8963;
 static ak8963_sens_coeff_t sens_coeff;
 
 /* TODO Are determined once */
-static ak8963_mag_data_t hard_iron_err = {.x = 0.0, .y = 0.0, .z = 0.0};
-static float soft_iron_err[3][3] = {{1.0, 0.0, 0.0},
-                                    {0.0, 1.0, 0.0},
-                                    {0.0, 0.0, 1.0}};
+static ak8963_mag_data_t hard_iron_err = {.x = MAG_HI_1,
+                                          .y = MAG_HI_2,
+                                          .z = MAG_HI_3};
+static float soft_iron_err[3][3] = {{MAG_SI_11, MAG_SI_12, MAG_SI_13},
+                                    {MAG_SI_21, MAG_SI_22, MAG_SI_23},
+                                    {MAG_SI_31, MAG_SI_32, MAG_SI_33}};
 
 esp_err_t drv_ak8963_init() {
 
@@ -126,23 +132,28 @@ esp_err_t drv_ak8963_read_mag_native(ak8963_mag_data_t *mag) {
 		int16_t raw[3];
 		raw[0] = (int16_t)((data[1] << 8) | data[0]);
 		raw[1] = (int16_t)((data[3] << 8) | data[2]);
-		raw[2] = (int16_t)((data[5] << 8) | data[4]);
+		raw[2] = -(int16_t)((data[5] << 8) | data[4]);
 
-		float mag_tmp[3];
-		mag_tmp[0] = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
-		mag_tmp[1] = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
-		mag_tmp[2] = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
-// 		mag->x = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
-// 		mag->y = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
-// 		mag->z = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
+		#if !defined(CALIBRATION)
+			float mag_tmp[3];
+			mag_tmp[0] = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
+			mag_tmp[1] = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
+			mag_tmp[2] = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
+		#else
+			mag->x = (float)(raw[0] * sens_coeff.adj_x * AK8963_SENSITIVITY);
+			mag->y = (float)(raw[1] * sens_coeff.adj_y * AK8963_SENSITIVITY);
+			mag->z = (float)(raw[2] * sens_coeff.adj_z * AK8963_SENSITIVITY);
+		#endif
 
-		/* Compensate for hard-iron errors */
-		mag_tmp[0] -= hard_iron_err.x;
-		mag_tmp[1] -= hard_iron_err.y;
-		mag_tmp[2] -= hard_iron_err.z;
+		#if !defined(CALIBRATION)
+			/* Compensate for hard-iron errors */
+			mag_tmp[0] -= hard_iron_err.x;
+			mag_tmp[1] -= hard_iron_err.y;
+			mag_tmp[2] -= hard_iron_err.z;
 
-		/* Compensate for soft-iron errors */
-		vecmath_matr_mul_3d(soft_iron_err, mag_tmp, (float*)mag);
+			/* Compensate for soft-iron errors */
+			vecmath_matr_mul_3d(soft_iron_err, mag_tmp, (float*)mag);
+		#endif
 
 	} else {
 		/* No new data available at this time */
@@ -157,6 +168,8 @@ esp_err_t drv_ak8963_read_mag_native(ak8963_mag_data_t *mag) {
 	return ESP_OK;
 }
 
+/* Returns the orientation, soft- and hardiron corrected magetometer data
+   on all three axis in uT (microtesla). */
 esp_err_t drv_ak8963_read_mag(ak8963_mag_data_t *mag) {
 
 	ak8963_mag_data_t mag_tmp;
@@ -168,11 +181,11 @@ esp_err_t drv_ak8963_read_mag(ak8963_mag_data_t *mag) {
 	#if defined(NATIVE_ORIENT)
 		mag->x = mag_tmp.y;
 		mag->y = mag_tmp.x;
-		mag->z = -mag_tmp.z;
+		mag->z = mag_tmp.z;
 	#elif defined(DEFAULT_ORIENT)
 		mag->x = mag_tmp.x;
 		mag->y = mag_tmp.y;
-		mag->z = mag_tmp.z;
+		mag->z = -mag_tmp.z;
 	#elif defined(HYPE_ORIENT)
 		mag->x = mag_tmp.x;
 		mag->y = mag_tmp.z;

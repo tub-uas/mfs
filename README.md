@@ -1,26 +1,21 @@
 # Modular Flight System (MFS)
 
-This repository contains the software running on the ESP32 chips that are part of
-the Modular Flight System (MFS). Currently we are supporting 4 different board types
-/ PCBs (Printed Circuit Boards):
+This repository contains the software running on the ESP32 chips that are part of the Modular Flight System (MFS). We are currently supporting 4 different board types / PCBs (Printed Circuit Boards):
 
 - RAI (Radio Actuator Interface)
 - AHRS (Altitude Heading Reference System)
 - PSU (Power Supply Unit)
-- GPS (Global Positioning System, this board is actually using GNSS - Global Navigation Satellite System)
+- GPS (Global Positioning System)
 
-All boards share a common (this) code base, since they all use very similar driver
-/ boilerplate software.
+All boards share a common (this) code base, since they all use very similar driver / boilerplate software.
 
 ## Getting started
 
-Install PlatformIO Core using the guide provided [here](https://docs.platformio.org/en/latest/core/installation.html). More specifically, run this command in your console
-`python3 -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
-` and add this line `export PATH=$PATH:~/.platformio/penv/bin` to your `~/.profile`.
+Install PlatformIO Core using the guide provided [here](https://docs.platformio.org/en/latest/core/installation.html). More specifically, run this command in your console `python3 -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)" ` and add this line `export PATH=$PATH:~/.platformio/penv/bin` to your `~/.profile`.
 
 You should now be able to compile and upload code to the boards via the 6 pin UART program header using the ESP-Prog. Power up the boards using a battery or a power supply (make sure the voltage is around 12v). Ensure that the ESP-Prog does not provide any power to the boards via the 6 pin header (set the jumpers accordingly). Connect the board of interest (if its not the PSU board itself) to the PSU boad via the CAN D-SUB connector and ensure that at least one LED lights up, indicating that the board is powered up. Finally connect the ESP-Prog to your computer and the board via the 6 pin header to the ESP-Prog.
 
-### Commands of interest
+#### Commands of interest
 - Compile and upload from terminal `pio run -t upload -e <BOARD>`
 - Monitor serial traffic in terminal `pio device monitor --raw`
 - Compile, upload and monitor `pio run -t upload -e <BOARD> && pio device monitor --raw`
@@ -34,7 +29,7 @@ You should now be able to compile and upload code to the boards via the 6 pin UA
 - `AHRS`
 - `GPS`
 
-### Issues
+#### Issues
 The `Cannot open /dev/ttyUSBx: Permission denied` error is caused by the user not having access to the serial ports. More specifically, the user is not in the `dialout` group. Run this `sudo usermod -a -G dialout $USER` and log out and back in again to fix it.
 
 For anyone who likes knowing what they're running before they run it:
@@ -48,17 +43,12 @@ For anyone who likes knowing what they're running before they run it:
 
 TODO
 
+
 ## Individual boards
 
 #### RAI
 
-The RAI (Radio Actuator Interface) is the most important board of all. It enables
-communication from the RC (Radio Control) receiver, which receives information form the pilots transmitter,
-to the servos and the motor. It is also able to transmit and receive control data
-over the CAN bus. This way the pilot can enable the autopilot / controller running
-on the Flight Control Computer (FCC). The software running on the RAI needs to be
-extremely reliable and bug free. Any fault could cause a loss of communication with
-the pilot which would inevitably lead to a loss of the aircraft.
+The RAI (Radio Actuator Interface) is the most important board of all boards. It enables communication from the RC (Radio Control) receiver, which receives information form the pilots transmitter, to the servos and the motor. It is also able to transmit and receive control data over the CAN bus. This way the pilot can enable the autopilot / controller running on the Flight Control Computer (FCC). The software running on the RAI needs to be extremely reliable and bug free. Any fault could cause a loss of communication with the pilot which would inevitably lead to a loss of the aircraft.
 
 The main tasks of the RAI include:
 - Receiving control data from the RC receiver via UART (Universal Asynchronous Receiver-Transmitter)/ SUMD (Digital SUM Signal)
@@ -67,22 +57,27 @@ The main tasks of the RAI include:
 - Switching between manual (RC receiver) and automatic (FCC) flight control
 - In case of communication loss activate fail safe
 
+
 #### AHRS
 
-TODO
+The AHRS (Altitude Heading Reference System) provides orientation (attitude) information.
+
 
 #### PSU
 
-TODO
+PSU (Power Supply Unit) supplies power to the system via the CAN bus. It also provides information about motor (and system) voltage, current and power consumption.   
+
 
 #### GPS
 
-TODO
+The GPS (Global Positioning System) provides the system with positioning information. It is actually using the GNSS (Global Navigation Satellite System), i.e. it is using not only the GPS, but also the Galileo, GLONASS, etc. systems.
 
 
 ## CAN IDs
 
 #### General
+
+This table provides a high level overview over what CAN IDs are used by which subsystem:
 
 | Range Dec   | Range Hex     | Function |
 |:-----------:|:-------------:|:--------:|
@@ -111,10 +106,7 @@ TODO
 
 #### More information
 
-For more information about the actual messages send over the CAN protocol have a
-look at [can_ids.h](./include/can_ids.h) and [can_meta.h](./include/can_meta.h). There you
-will find the actual IDs of the individual CAN messages, as well as meta information,
-such as the length of the data chunk send (i.e. the number of CAN messages) and more.
+For more information about the actual messages send over the CAN protocol have a look at [can_ids.h](./include/can_ids.h) and [can_meta.h](./include/can_meta.h). There, you will find the actual IDs of the individual CAN messages, as well as meta information, such as the length of the data chunk send (i.e. the number of CAN messages) and more.
 
 ## Coding Guide
 
@@ -126,9 +118,7 @@ such as the length of the data chunk send (i.e. the number of CAN messages) and 
 * Put spaces after the following keywords : `if`, `switch`, `case`, `for`, `do`, `while`.
 
 #### Placing braces
-For this, we will follow the good old prophets of C : Kernighan and Ritchie.
-It also happens to be the rule of the Linux Kernel.
-The way the prophets taught us is to put the opening brace last on the line and the closing brace first :
+For this, we will follow the good old prophets of C : Kernighan and Ritchie. It also happens to be the rule of the Linux Kernel. The way the prophets taught us is to put the opening brace last on the line and the closing brace first :
 
 ```cpp
 if (x == 42) {
@@ -136,8 +126,7 @@ if (x == 42) {
 }
 ```
 
-Note that the closing brace is always on its own line except if it is followed by a continuation
-of the same statement, for example in a `do..while` block or in an `if..else` block :
+Note that the closing brace is always on its own line except if it is followed by a continuation of the same statement, for example in a `do..while` block or in an `if..else` block :
 
 ```cpp
 if (x == 42) {
@@ -163,9 +152,7 @@ void do_something_useful(void) {
 }
 ```
 
-Always use braces.
-This avoids mistakes and improves readability, without costing much of your time.
-Don't do this :
+Always use braces. This avoids mistakes and improves readability, without costing much of your time. Don't do this :
 
 ```cpp
 if (x == 42)
@@ -195,8 +182,7 @@ if (x == 42) {
 #### Interaction with C++
 (Only applicable if using C and C++ together.)
 
-To allow for easy inclusion of your headers in C++ files, you should put `extern "C"` in your header.
-If you don't do this, you will get weird link time error because of C++ name mangling.
+To allow for easy inclusion of your headers in C++ files, you should put `extern "C"` in your header. If you don't do this, you will get weird link time error because of C++ name mangling.
 
 For example:
 ```cpp

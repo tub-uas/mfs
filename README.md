@@ -7,10 +7,42 @@ the Modular Flight System (MFS). Currently we are supporting 4 different board t
 - RAI (Radio Actuator Interface)
 - AHRS (Altitude Heading Reference System)
 - PSU (Power Supply Unit)
-- GPS (Global Positioning System) (GNSS - Global Navigation Satellite System)
+- GPS (Global Positioning System, this board is actually using GNSS - Global Navigation Satellite System)
 
 All boards share a common (this) code base, since they all use very similar driver
 / boilerplate software.
+
+## Getting started
+
+Install PlatformIO Core using the guide provided [here](https://docs.platformio.org/en/latest/core/installation.html). More specifically, run this command in your console
+`python3 -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
+` and add this line `export PATH=$PATH:~/.platformio/penv/bin` to your `~/.profile`.
+
+You should now be able to compile and upload code to the boards via the 6 pin UART program header using the ESP-Prog. Power up the boards using a battery or a power supply (make sure the voltage is around 12v). Ensure that the ESP-Prog does not provide any power to the boards via the 6 pin header (set the jumpers accordingly). Connect the board of interest (if its not the PSU board itself) to the PSU boad via the CAN D-SUB connector and ensure that at least one LED lights up, indicating that the board is powered up. Finally connect the ESP-Prog to your computer and the board via the 6 pin header to the ESP-Prog.
+
+### Commands of interest
+- Compile and upload from terminal `pio run -t upload -e <BOARD>`
+- Monitor serial traffic in terminal `pio device monitor --raw`
+- Compile, upload and monitor `pio run -t upload -e <BOARD> && pio device monitor --raw`
+- List available devices `pio device list`
+- Menu Config `pio run --t menuconfig`
+- Run static checks on code `pio check`
+
+`<BOARD>` can be any of the following:
+- `RAI`
+- `PSU`
+- `AHRS`
+- `GPS`
+
+### Issues
+The `Cannot open /dev/ttyUSBx: Permission denied` error is caused by the user not having access to the serial ports. More specifically, the user is not in the `dialout` group. Run this `sudo usermod -a -G dialout $USER` and log out and back in again to fix it.
+
+For anyone who likes knowing what they're running before they run it:
+- `usermod` - modify a user account
+- `-a` - add the user to supplementary groups
+- `-G` - a list of supplementary groups (man page says to use `-a` only with `-G`)
+- `dialout` - group that controls access to serial ports (and other hardware too)
+- `$USER` - Bash variable containing current username (not a builtin, usually automatically set env variable)
 
 ## Architecture
 

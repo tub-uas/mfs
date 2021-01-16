@@ -12,24 +12,29 @@
 
 #include "util.h"
 
-#define NUM_GENS 1
+#define NUM_GENS 2
 
 #define RAI_GEN1    0xbf10666c
 #define PSU_GEN1    0xbf106be0
 #define AHRS_GEN1   0xbf106614
 #define GPS_GEN1    0xbf106688
 
+#define RAI_GEN2    0xb21c6684
+#define PSU_GEN2    0xb21e0844
+#define AHRS_GEN2   0x33692cb5
+#define GPS_GEN2    0xffffffff
+
 #if defined(RAI_BOARD)
-	uint32_t valid_ids[NUM_GENS] = {RAI_GEN1};
+	uint32_t valid_ids[NUM_GENS] = {RAI_GEN1, RAI_GEN2};
 	#define BOARD_NAME "RAI"
 #elif defined(PSU_BOARD)
-	uint32_t valid_ids[NUM_GENS] = {PSU_GEN1};
+	uint32_t valid_ids[NUM_GENS] = {PSU_GEN1, PSU_GEN2};
 	#define BOARD_NAME "PSU"
 #elif defined(AHRS_BOARD)
-	uint32_t valid_ids[NUM_GENS] = {AHRS_GEN1};
+	uint32_t valid_ids[NUM_GENS] = {AHRS_GEN1, AHRS_GEN2};
 	#define BOARD_NAME "AHRS"
 #elif defined(GPS_BOARD)
-	uint32_t valid_ids[NUM_GENS] = {GPS_GEN1};
+	uint32_t valid_ids[NUM_GENS] = {GPS_GEN1, GPS_GEN2};
 	#define BOARD_NAME "GPS"
 #else
 	#error "Unkown board type"

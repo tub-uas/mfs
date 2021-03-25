@@ -10,6 +10,14 @@ extern "C" {
 #include "esp_err.h"
 #include "driver/uart.h"
 
+// GEN1 board (only GPS)
+// #define GPS_UART_RX 26
+// #define GPS_UART_TX 27
+
+// GEN2 board (GPS is part of AHRS board)
+#define GPS_UART_RX 16
+#define GPS_UART_TX 17
+
 #define GPS_MAX_SATELLITES_IN_USE (12)
 #define GPS_MAX_SATELLITES_IN_VIEW (16)
 
@@ -98,9 +106,9 @@ typedef void *nmea_parser_handle_t;
 	{                                      \
 		.uart = {                          \
 			.uart_port = UART_NUM_1,       \
-			.rx_pin = 26,                  \
-			.tx_pin = 27,                  \
-			.baud_rate = 9600,             \
+			.rx_pin = GPS_UART_RX,         \
+			.tx_pin = GPS_UART_TX,         \
+			.baud_rate = 115200,           \
 			.data_bits = UART_DATA_8_BITS, \
 			.parity = UART_PARITY_DISABLE, \
 			.stop_bits = UART_STOP_BITS_1, \

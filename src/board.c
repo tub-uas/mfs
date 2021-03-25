@@ -21,7 +21,7 @@
 
 #define RAI_GEN2    0xb21c6684
 #define PSU_GEN2    0xb21e0844
-#define AHRS_GEN2   0x33692cb5
+#define AHRS_GEN2   0x33692cb5 // combines AHRS and GPS from GEN1
 #define GPS_GEN2    0xffffffff
 
 #if defined(RAI_BOARD)

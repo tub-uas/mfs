@@ -62,6 +62,10 @@ The main tasks of the RAI include:
 
 The AHRS (Altitude Heading Reference System) provides orientation (attitude) information.
 
+Steps needed for IMU / AHRS calibration:
+
+- [ ] Mercury
+
 
 #### PSU
 
@@ -106,7 +110,7 @@ This table provides a high level overview over what CAN IDs are used by which su
 
 #### More information
 
-For more information about the actual messages send over the CAN protocol have a look at [can_ids.h](./include/can_ids.h) and [can_meta.h](./include/can_meta.h). There, you will find the actual IDs of the individual CAN messages, as well as meta information, such as the length of the data chunk send (i.e. the number of CAN messages) and more.
+For more information about the actual messages send over the CAN protocol have a look at [can_ids.h](./include/twai_ids.h) and [can_meta.h](./include/twai_meta.h). There, you will find the actual IDs of the individual CAN messages, as well as meta information, such as the length of the data chunk send (i.e. the number of CAN messages) and more.
 
 ## Coding Guide
 

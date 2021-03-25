@@ -66,6 +66,15 @@ Steps needed for IMU / AHRS calibration:
 
 - [ ] Mercury
 
+Data needed:
+- Scaling values for current compass compensation (3 values)
+- Hard iron errors (3 values)
+- Soft iron errors (3x 3 values)
+- Accel scaling values (2x 3 values)
+- Gyro bias errors (3 values)
+- Attitude alignment errors (3 values)?
+
+
 
 #### PSU
 

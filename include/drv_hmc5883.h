@@ -90,7 +90,7 @@ esp_err_t drv_hmc5883_data_is_ready(uint8_t *val);
 
 esp_err_t drv_hmc5883_get_raw_data(drv_hmc5883_raw_data_t *data);
 
-esp_err_t drv_hmc5883_raw_to_mg(drv_hmc5883_raw_data_t raw, drv_hmc5883_data_t *mg);
+esp_err_t drv_hmc5883_raw_to_mt(drv_hmc5883_raw_data_t raw, drv_hmc5883_data_t *mt);
 
 esp_err_t drv_hmc5883_get_data(drv_hmc5883_data_t *data);
 

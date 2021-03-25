@@ -49,7 +49,7 @@ esp_err_t drv_hmc5883_init() {
 	uint8_t val = 0;
 	drv_i2c_read_bytes(hmc5883, REG_MODE, 1, &val);
 
-	printf("mode: %x \n", val);
+	printf("HMC5883 mode: %x \n", val);
 
 	// drv_hmc5883_gain_t gain_tmp = 0;
 	// drv_hmc5883_get_gain(&gain_tmp);
@@ -88,7 +88,7 @@ esp_err_t drv_hmc5883_get_opmode(drv_hmc5883_opmode_t *val) {
 
 	drv_i2c_read_bytes(hmc5883, REG_MODE, 1, (uint8_t *)val);
 
-	printf("opmode raw %d \n", *val & MASK_MD);
+	printf("HMC5883 opmode raw %d \n", *val & MASK_MD);
 
 	*val = (*val & MASK_MD) == 0 ? HMC5883L_MODE_CONTINUOUS : HMC5883L_MODE_SINGLE;
 
@@ -194,21 +194,22 @@ esp_err_t drv_hmc5883_get_raw_data(drv_hmc5883_raw_data_t *data) {
 	return ESP_OK;
 }
 
-/* raw to gauss */
-esp_err_t drv_hmc5883_raw_to_mg(drv_hmc5883_raw_data_t raw, drv_hmc5883_data_t *mg) {
-	mg->x = raw.x * gain * 0.001;
-	mg->y = raw.y * gain * 0.001;
-	mg->z = raw.z * gain * 0.001;
+/* Raw to microtesla */
+esp_err_t drv_hmc5883_raw_to_mt(drv_hmc5883_raw_data_t raw, drv_hmc5883_data_t *mt) {
+	mt->x = raw.x * gain * 0.1;
+	mt->y = raw.y * gain * 0.1;
+	mt->z = raw.z * gain * 0.1;
 
 	return ESP_OK;
 }
 
+/* Return magnetometer data in microtesla */
 esp_err_t drv_hmc5883_get_data(drv_hmc5883_data_t *data) {
 
 	drv_hmc5883_raw_data_t raw;
 
 	esp_err_t ret = drv_hmc5883_get_raw_data(&raw);
-	drv_hmc5883_raw_to_mg(raw, data);
+	drv_hmc5883_raw_to_mt(raw, data);
 
 	return ret;
 }

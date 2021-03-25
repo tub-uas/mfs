@@ -14,10 +14,10 @@
 #include "util.h"
 
 /* We are using ADC1, since ADC2 is not usable when wifi is enabled. */
-#define SENSE_VPOWER_CH  ADC1_GPIO35_CHANNEL
-#define SENSE_VSYSTEM_CH ADC1_GPIO36_CHANNEL	// aka. SENSOR_VP
+#define SENSE_VPOWER_CH  ADC1_CHANNEL_7
+#define SENSE_VSYSTEM_CH ADC1_CHANNEL_0	// aka. SENSOR_VP
 
-/* This is how many times we will take a measurment to get an average value */
+/* This is how many times we will take a measurment to get an average value. */
 #define SENSE_VPOWER_AVG 10
 #define SENSE_VSYSTEM_AVG 10
 

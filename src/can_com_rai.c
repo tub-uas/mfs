@@ -12,7 +12,7 @@
 #include "esp_err.h"
 #include "string.h"
 #include "driver/gpio.h"
-#include "driver/can.h"
+#include "driver/twai.h"
 
 #include "can_ids.h"
 #include "can_meta.h"
@@ -52,13 +52,13 @@ esp_err_t can_com_rai_init() {
 
 esp_err_t can_com_rai_send(can_com_rai_t data) {
 
-	can_message_t message;
-	message.flags = CAN_MSG_FLAG_NONE;
+	twai_message_t message;
+	message.flags = TWAI_MSG_FLAG_NONE;
 	message.data_length_code = 8;
 
 	message.identifier = CAN_ID_RAI_DATA0;
 	memcpy(&message.data[0], &data.chnl[0], message.data_length_code);
-	if (can_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
+	if (twai_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
 		ESP_LOGE(__FILE__, "Failed to queue CAN message for transmission, id: 0x%x",
 		         message.identifier);
 		return ESP_FAIL;
@@ -66,7 +66,7 @@ esp_err_t can_com_rai_send(can_com_rai_t data) {
 
 	message.identifier = CAN_ID_RAI_DATA1;
 	memcpy(&message.data[0], &data.chnl[4], message.data_length_code);
-	if (can_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
+	if (twai_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
 		ESP_LOGE(__FILE__, "Failed to queue CAN message for transmission, id: 0x%x",
 		         message.identifier);
 		return ESP_FAIL;
@@ -74,7 +74,7 @@ esp_err_t can_com_rai_send(can_com_rai_t data) {
 
 	message.identifier = CAN_ID_RAI_DATA2;
 	memcpy(&message.data[0], &data.chnl[8], message.data_length_code);
-	if (can_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
+	if (twai_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
 		ESP_LOGE(__FILE__, "Failed to queue CAN message for transmission, id: 0x%x",
 		         message.identifier);
 		return ESP_FAIL;
@@ -83,7 +83,7 @@ esp_err_t can_com_rai_send(can_com_rai_t data) {
 	message.identifier = CAN_ID_RAI_DATA3;
 	message.data_length_code = 4;
 	memcpy(&message.data[0], &data.time, sizeof(float));
-	if (can_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
+	if (twai_transmit(&message, pdMS_TO_TICKS(CAN_TIMEOUT)) != ESP_OK) {
 		ESP_LOGE(__FILE__, "Failed to queue CAN message for transmission, id: 0x%x",
 		         message.identifier);
 		return ESP_FAIL;
@@ -136,9 +136,9 @@ esp_err_t can_com_rai_recv(can_com_rai_t *data) {
 
 	for (int i=0; i<CAN_META_RAI_MSG_NUM; i++) {
 
-		can_message_t message;
+		twai_message_t message;
 
-		if (can_receive(&message, pdMS_TO_TICKS(50)) != ESP_OK) {
+		if (twai_receive(&message, pdMS_TO_TICKS(50)) != ESP_OK) {
 			return ESP_FAIL;
 
 		} else {

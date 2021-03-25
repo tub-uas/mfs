@@ -9,7 +9,7 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "driver/gpio.h"
-#include "driver/can.h"
+#include "driver/twai.h"
 
 #include "util.h"
 
@@ -20,16 +20,16 @@ esp_err_t drv_can_init(uint32_t ids[], uint32_t ids_len) {
 
 	ESP_LOGI(__FILE__, "Initalizing CAN Driver");
 
-	can_general_config_t g_config = CAN_GENERAL_CONFIG_DEFAULT(CAN_TX_PIN,
+	twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_PIN,
 	                                                           CAN_RX_PIN,
-	                                                           CAN_MODE_NORMAL);
+	                                                           TWAI_MODE_NORMAL);
 
-	can_timing_config_t t_config = CAN_TIMING_CONFIG_500KBITS();
+	twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
 
-	can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
+	twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
 	if (ids_len > 0) {
-		
+
 		f_config.acceptance_mask = 0x000;
 		f_config.acceptance_code = 0x7FF;
 
@@ -45,11 +45,11 @@ esp_err_t drv_can_init(uint32_t ids[], uint32_t ids_len) {
 		f_config.acceptance_code <<= 21;
 	}
 
-	esp_err_t ret_install = can_driver_install(&g_config, &t_config, &f_config);
+	esp_err_t ret_install = twai_driver_install(&g_config, &t_config, &f_config);
 	if (ret_install != ESP_OK)
 		ESP_LOGE(__FILE__, "Cant install CAN Driver");
 
-	esp_err_t ret_start = can_start();
+	esp_err_t ret_start = twai_start();
 	if (ret_start != ESP_OK)
 		ESP_LOGE(__FILE__, "Cant start CAN Driver");
 
@@ -62,18 +62,18 @@ void drv_can_test() {
 
 	while (1) {
 
-		can_message_t message;
-		message.flags = CAN_MSG_FLAG_NONE;
+		twai_message_t message;
+		message.flags = TWAI_MSG_FLAG_NONE;
 		message.identifier = 0x0A0;
 		message.data_length_code = 8;
 		for (uint32_t i = 0; i < 8; i++) {
 			message.data[i] = i+0xA0;
 		}
 
-		if (can_transmit(&message, pdMS_TO_TICKS(500)) != ESP_OK)
+		if (twai_transmit(&message, pdMS_TO_TICKS(500)) != ESP_OK)
 			ESP_LOGW(__FILE__, "Failed to queue CAN message for transmission");
 
-		if (can_receive(&message, pdMS_TO_TICKS(500)) != ESP_OK) {
+		if (twai_receive(&message, pdMS_TO_TICKS(500)) != ESP_OK) {
 			ESP_LOGW(__FILE__, "No CAN message received");
 		} else {
 			printf("Received CAN Message, id: %u, dlc: %d, data: %x %x %x %x %x %x %x %x \n",

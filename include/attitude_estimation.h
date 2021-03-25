@@ -7,6 +7,7 @@
 #include "esp_err.h"
 
 #include "can_com_ahrs.h"
+#include "drv_ak8963.h"
 
 esp_err_t attitude_init();
 
@@ -23,6 +24,8 @@ void attitude_quat_eul_conv(float q[4], float att[3]);
 void attitude_est(float acc[3], float gyr[3], float mag[3], float att[3], float millis_delta);
 
 esp_err_t get_attitude(can_com_ahrs_t *data);
+
+esp_err_t compensate_mag_with_current(float current, ak8963_mag_data_t *mag);
 
 void attitude_worker();
 

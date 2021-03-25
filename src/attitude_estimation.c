@@ -14,6 +14,7 @@
 
 #include "board.h"
 #include "drv_ak8963.h"
+#include "drv_ak8963_const.h"
 #include "drv_bmp280.h"
 #include "drv_mpu9250.h"
 #include "drv_led.h"
@@ -190,6 +191,14 @@ esp_err_t get_attitude(can_com_ahrs_t *data) {
 	}
 }
 
+esp_err_t compensate_mag_with_current(float current, ak8963_mag_data_t *mag) {
+	mag->x = mag->x - MAG_CS_1 * current;
+	mag->y = mag->y - MAG_CS_2 * current;
+	mag->z = mag->z - MAG_CS_3 * current;
+
+	return ESP_OK;
+}
+
 void attitude_worker() {
 
 	ESP_LOGI(__FILE__, "Starting Attitude Worker");
@@ -212,13 +221,13 @@ void attitude_worker() {
 		mpu9250_acc_data_t acc;
 		memset(&acc, 0, sizeof(acc));
 		if (drv_mpu9250_read_acc(&acc) != ESP_OK) {
-			ESP_LOGE(__FILE__, "Could not read accelerometer data from mpu9250");
+			ESP_LOGE(__FILE__, "Could not read accel data from mpu9250");
 		}
 
 		mpu9250_gyr_data_t gyr;
 		memset(&gyr, 0, sizeof(gyr));
 		if (drv_mpu9250_read_gyr(&gyr) != ESP_OK) {
-			ESP_LOGE(__FILE__, "Could not read gyroscope data from mpu9250");
+			ESP_LOGE(__FILE__, "Could not read gyro data from mpu9250");
 		}
 
 		ak8963_mag_data_t mag;
@@ -228,7 +237,7 @@ void attitude_worker() {
 		if (ret == ESP_ERR_TIMEOUT) {
 			memcpy(&mag, &last_mag, sizeof(mag));
 		} else if (ret != ESP_OK) {
-			ESP_LOGE(__FILE__, "Could not read magnetometer data from mpu9250");
+			ESP_LOGE(__FILE__, "Could not read mag data from mpu9250");
 		} else {
 			last_mag = mag;
 		}
@@ -236,7 +245,10 @@ void attitude_worker() {
 		// printf("acc x %10.5f, y %10.5f, z %10.5f ", acc.x, acc.y, acc.z);
 		// printf("gyr x %10.5f, y %10.5f, z %10.5f ", gyr.x, gyr.y, gyr.z);
 		// printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f \n", mag.x, mag.y, mag.z, get_time_s());
-		
+
+		/* Correct mag data for distortion by main current */
+		compensate_mag_with_current(psu_data.sense_main_curr, &mag);
+
 		static float last_time = 0.0;
 		float delta_time = get_time_s() - last_time;
 		last_time = get_time_s();

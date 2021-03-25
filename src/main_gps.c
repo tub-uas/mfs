@@ -28,37 +28,38 @@ static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_ba
 		case GPS_UPDATE:
 
 			gps = (gps_t *)event_data;
-			printf("\n--- %d/%d/%d %d:%d:%d ---\n"
-			       "latitude     = %.07fN\n"
-			       "longitude    = %.07fE\n"
-			       "altitude     = %.02fm\n"
-			       "speed        = %.05fm/s\n"
-			       "fix          = %d\n"
-			       "fix_mode     = %d\n"
-			       "sats_in_view = %d\n"
-			       "sats_in_use  = %d\n"
-			       "dop_h        = %f\n"
-			       "dop_p        = %f\n"
-			       "dop_v        = %f\n"
-			       "variation    = %f\n"
-			       "cog          = %f\n"
-			       "valid        = %d\n",
-			       gps->date.year + 2000, gps->date.month, gps->date.day,
-			       gps->tim.hour + TIME_ZONE, gps->tim.minute, gps->tim.second,
-			       gps->latitude,
-			       gps->longitude,
-			       gps->altitude,
-			       gps->speed,
-			       gps->fix,
-			       gps->fix_mode,
-			       gps->sats_in_view,
-			       gps->sats_in_use,
-			       gps->dop_h,
-			       gps->dop_p,
-			       gps->dop_v,
-			       gps->variation,
-			       gps->cog,
-			       gps->valid);
+
+			// printf("\n--- %d/%d/%d %d:%d:%d ---\n"
+			//        "latitude     = %.07fN\n"
+			//        "longitude    = %.07fE\n"
+			//        "altitude     = %.02fm\n"
+			//        "speed        = %.05fm/s\n"
+			//        "fix          = %d\n"
+			//        "fix_mode     = %d\n"
+			//        "sats_in_view = %d\n"
+			//        "sats_in_use  = %d\n"
+			//        "dop_h        = %f\n"
+			//        "dop_p        = %f\n"
+			//        "dop_v        = %f\n"
+			//        "variation    = %f\n"
+			//        "cog          = %f\n"
+			//        "valid        = %d\n",
+			//        gps->date.year + 2000, gps->date.month, gps->date.day,
+			//        gps->tim.hour + TIME_ZONE, gps->tim.minute, gps->tim.second,
+			//        gps->latitude,
+			//        gps->longitude,
+			//        gps->altitude,
+			//        gps->speed,
+			//        gps->fix,
+			//        gps->fix_mode,
+			//        gps->sats_in_view,
+			//        gps->sats_in_use,
+			//        gps->dop_h,
+			//        gps->dop_p,
+			//        gps->dop_v,
+			//        gps->variation,
+			//        gps->cog,
+			//        gps->valid);
 
 			if (xSemaphoreTake(gps_data_sem, 10 / portTICK_PERIOD_MS) == true) {
 
@@ -106,7 +107,7 @@ static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_ba
 
 void main_gps() {
 
-	ESP_LOGI(__FILE__, "Running main_gps");
+	ESP_LOGI(__FILE__, "RUNNING MAIN_GPS");
 
 	delay_ms(1000);
 
@@ -126,7 +127,7 @@ void main_gps() {
 	/* register event handler for NMEA parser library */
 	ESP_ERROR_CHECK(nmea_parser_add_handler(nmea_hdl, gps_event_handler, NULL));
 
-	ESP_ERROR_CHECK(drv_hmc5883_init());
+	ESP_ERROR_CHECK(drv_hmc5883_init(false));
 
 	TickType_t last_wake_time = xTaskGetTickCount();
 
@@ -136,18 +137,19 @@ void main_gps() {
 		memset(&compass_data, 0, sizeof(compass_data));
 		drv_hmc5883_get_data(&compass_data);
 
-		printf("compass_x    = %f\n"
-		       "compass_y    = %f\n"
-		       "compass_z    = %f\n",
-		       compass_data.x,
-		       compass_data.y,
-		       compass_data.z);
+		// printf("compass_x = %10.5f   "
+		//        "compass_y = %10.5f   "
+		//        "compass_z = %10.5f  \n",
+		//        compass_data.x,
+		//        compass_data.y,
+		//        compass_data.z);
 
 		if (xSemaphoreTake(gps_data_sem, 10 / portTICK_PERIOD_MS) == true) {
 			data.mag_x = compass_data.x;
 			data.mag_y = compass_data.y;
 			data.mag_z = compass_data.z;
 
+			// Send GPS data over CAN
 			can_com_gps_send(data);
 
 			xSemaphoreGive(gps_data_sem);

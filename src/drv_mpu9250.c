@@ -22,6 +22,7 @@ static i2c_device_t mpu9250;
 
 /* Internal accelerometer variables */
 static float acc_scale_val = 0.0;
+
 /* TODO Are determined once */
 static mpu9250_acc_data_t acc_scale_err_pos = {.x = 1.0, .y = 1.0, .z = 1.0};
 static mpu9250_acc_data_t acc_scale_err_neg = {.x = 1.0, .y = 1.0, .z = 1.0};

@@ -85,6 +85,7 @@ void app_main() {
 		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
 		ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
 		ESP_ERROR_CHECK(can_com_gps_init()); /* Init gps can interface */
+		ESP_ERROR_CHECK(drv_hmc5883_init());
 
 	#endif
 
@@ -98,7 +99,8 @@ void app_main() {
 		xTaskCreate(main_psu, "main_psu", 4096, NULL, 10, NULL);
 
 	#elif defined(AHRS_BOARD)
-		xTaskCreate(main_ahrs, "main_ahrs", 4096, NULL, 10, NULL);
+		xTaskCreate(main_ahrs, "main_ahrs", 4096, NULL, 20, NULL);
+		xTaskCreate(main_gps, "main_gps", 4096, NULL, 10, NULL); /* GPS is now part of AHRS */
 
 	#elif defined(GPS_BOARD)
 		xTaskCreate(main_gps, "main_gps", 4096, NULL, 10, NULL);

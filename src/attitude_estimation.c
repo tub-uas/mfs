@@ -255,7 +255,7 @@ void attitude_worker() {
 
 		float att[3] = {0.0};
 		attitude_est((float*)&acc, (float*)&gyr, (float*)&mag, att, delta_time);
-		printf("Att: %10.5f, %10.5f, %10.5f \n", att[0], att[1], att[2]);
+		// printf("Att: %10.5f, %10.5f, %10.5f \n", att[0], att[1], att[2]);
 
 		float temp = bmp280_get_temp();
 		float press = bmp280_get_press();

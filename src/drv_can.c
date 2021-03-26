@@ -21,8 +21,8 @@ esp_err_t drv_can_init(uint32_t ids[], uint32_t ids_len) {
 	ESP_LOGI(__FILE__, "Initalizing CAN Driver");
 
 	twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_PIN,
-	                                                           CAN_RX_PIN,
-	                                                           TWAI_MODE_NORMAL);
+	                                                             CAN_RX_PIN,
+	                                                             TWAI_MODE_NORMAL);
 
 	twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
 

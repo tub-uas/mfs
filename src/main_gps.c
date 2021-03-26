@@ -29,37 +29,37 @@ static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_ba
 
 			gps = (gps_t *)event_data;
 
-			// printf("\n--- %d/%d/%d %d:%d:%d ---\n"
-			//        "latitude     = %.07fN\n"
-			//        "longitude    = %.07fE\n"
-			//        "altitude     = %.02fm\n"
-			//        "speed        = %.05fm/s\n"
-			//        "fix          = %d\n"
-			//        "fix_mode     = %d\n"
-			//        "sats_in_view = %d\n"
-			//        "sats_in_use  = %d\n"
-			//        "dop_h        = %f\n"
-			//        "dop_p        = %f\n"
-			//        "dop_v        = %f\n"
-			//        "variation    = %f\n"
-			//        "cog          = %f\n"
-			//        "valid        = %d\n",
-			//        gps->date.year + 2000, gps->date.month, gps->date.day,
-			//        gps->tim.hour + TIME_ZONE, gps->tim.minute, gps->tim.second,
-			//        gps->latitude,
-			//        gps->longitude,
-			//        gps->altitude,
-			//        gps->speed,
-			//        gps->fix,
-			//        gps->fix_mode,
-			//        gps->sats_in_view,
-			//        gps->sats_in_use,
-			//        gps->dop_h,
-			//        gps->dop_p,
-			//        gps->dop_v,
-			//        gps->variation,
-			//        gps->cog,
-			//        gps->valid);
+			printf("\n--- %d/%d/%d %d:%d:%d ---\n"
+			       "latitude     = %.07fN\n"
+			       "longitude    = %.07fE\n"
+			       "altitude     = %.02fm\n"
+			       "speed        = %.05fm/s\n"
+			       "fix          = %d\n"
+			       "fix_mode     = %d\n"
+			       "sats_in_view = %d\n"
+			       "sats_in_use  = %d\n"
+			       "dop_h        = %f\n"
+			       "dop_p        = %f\n"
+			       "dop_v        = %f\n"
+			       "variation    = %f\n"
+			       "cog          = %f\n"
+			       "valid        = %d\n",
+			       gps->date.year + 2000, gps->date.month, gps->date.day,
+			       gps->tim.hour + TIME_ZONE, gps->tim.minute, gps->tim.second,
+			       gps->latitude,
+			       gps->longitude,
+			       gps->altitude,
+			       gps->speed,
+			       gps->fix,
+			       gps->fix_mode,
+			       gps->sats_in_view,
+			       gps->sats_in_use,
+			       gps->dop_h,
+			       gps->dop_p,
+			       gps->dop_v,
+			       gps->variation,
+			       gps->cog,
+			       gps->valid);
 
 			if (xSemaphoreTake(gps_data_sem, 10 / portTICK_PERIOD_MS) == true) {
 

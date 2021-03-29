@@ -49,7 +49,7 @@ esp_err_t drv_hmc5883_init() {
 	uint8_t val = 0;
 	drv_i2c_read_bytes(hmc5883, REG_MODE, 1, &val);
 
-	printf("HMC5883 mode: %x \n", val);
+	ESP_LOGI(__FILE__, "HMC5883 mode: %x \n", val);
 
 	// drv_hmc5883_gain_t gain_tmp = 0;
 	// drv_hmc5883_get_gain(&gain_tmp);

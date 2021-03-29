@@ -11,7 +11,6 @@
 
 #include "util.h"
 #include "drv_nmea.h"
-#include "drv_nmea_config.h"
 #include "drv_hmc5883.h"
 #include "drv_led.h"
 #include "can_com_gps.h"
@@ -23,44 +22,48 @@ static atomic_uint last_valid_sample_time = 0;
 static can_com_gps_t data;
 static SemaphoreHandle_t gps_data_sem = NULL;
 
-static void gps_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+/* When all GPS messages have been received this callback gets executed. */
+static void gps_event_handler(void *event_handler_arg,
+                              esp_event_base_t event_base,
+                              int32_t event_id,
+                              void *event_data) {
 	gps_t *gps = NULL;
 	switch (event_id) {
 		case GPS_UPDATE:
 
 			gps = (gps_t *)event_data;
 
-			printf("\n--- %d/%d/%d %d:%d:%d ---\n"
-			       "latitude     = %.07fN\n"
-			       "longitude    = %.07fE\n"
-			       "altitude     = %.02fm\n"
-			       "speed        = %.05fm/s\n"
-			       "fix          = %d\n"
-			       "fix_mode     = %d\n"
-			       "sats_in_view = %d\n"
-			       "sats_in_use  = %d\n"
-			       "dop_h        = %f\n"
-			       "dop_p        = %f\n"
-			       "dop_v        = %f\n"
-			       "variation    = %f\n"
-			       "cog          = %f\n"
-			       "valid        = %d\n",
-			       gps->date.year + 2000, gps->date.month, gps->date.day,
-			       gps->tim.hour + TIME_ZONE, gps->tim.minute, gps->tim.second,
-			       gps->latitude,
-			       gps->longitude,
-			       gps->altitude,
-			       gps->speed,
-			       gps->fix,
-			       gps->fix_mode,
-			       gps->sats_in_view,
-			       gps->sats_in_use,
-			       gps->dop_h,
-			       gps->dop_p,
-			       gps->dop_v,
-			       gps->variation,
-			       gps->cog,
-			       gps->valid);
+			// printf("\n--- %d/%d/%d %d:%d:%d ---\n"
+			//        "latitude     = %.07fN\n"
+			//        "longitude    = %.07fE\n"
+			//        "altitude     = %.02fm\n"
+			//        "speed        = %.05fm/s\n"
+			//        "fix          = %d\n"
+			//        "fix_mode     = %d\n"
+			//        "sats_in_view = %d\n"
+			//        "sats_in_use  = %d\n"
+			//        "dop_h        = %f\n"
+			//        "dop_p        = %f\n"
+			//        "dop_v        = %f\n"
+			//        "variation    = %f\n"
+			//        "cog          = %f\n"
+			//        "valid        = %d\n",
+			//        gps->date.year + 2000, gps->date.month, gps->date.day,
+			//        gps->tim.hour + TIME_ZONE, gps->tim.minute, gps->tim.second,
+			//        gps->latitude,
+			//        gps->longitude,
+			//        gps->altitude,
+			//        gps->speed,
+			//        gps->fix,
+			//        gps->fix_mode,
+			//        gps->sats_in_view,
+			//        gps->sats_in_use,
+			//        gps->dop_h,
+			//        gps->dop_p,
+			//        gps->dop_v,
+			//        gps->variation,
+			//        gps->cog,
+			//        gps->valid);
 
 			if (xSemaphoreTake(gps_data_sem, 10 / portTICK_PERIOD_MS) == true) {
 
@@ -110,10 +113,13 @@ void main_gps() {
 
 	ESP_LOGI(__FILE__, "RUNNING MAIN_GPS");
 
+	/* Wait for the GPS to start up */
 	delay_ms(1000);
 
+	/* Reset GPS data */
 	memset(&data, 0, sizeof(data));
 
+	/* Initialize GPS mutex */
 	gps_data_sem = xSemaphoreCreateMutex();
 	if (gps_data_sem == NULL) {
 		ESP_LOGE(__FILE__, "Cant create GPS data mutex");
@@ -122,52 +128,12 @@ void main_gps() {
 	/* NMEA parser configuration */
 	nmea_parser_config_t config = NMEA_PARSER_CONFIG_DEFAULT();
 
-	/* Configure GPS settings for operation */
-	ESP_LOGI(__FILE__, "First connection with GPS in config mode");
-	uart_config_t uart_config = {
-		.baud_rate = 9600,
-		.data_bits = config.uart.data_bits,
-		.parity = config.uart.parity,
-		.stop_bits = config.uart.stop_bits,
-		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-		.source_clk = UART_SCLK_APB,
-	};
-
-	ESP_ERROR_CHECK(uart_param_config(config.uart.uart_port, &uart_config));
-
-	ESP_ERROR_CHECK(uart_set_pin(config.uart.uart_port,config.uart.tx_pin,
-	          config.uart.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-
-	const int uart_buffer_size = 65536;
-	QueueHandle_t uart_queue;
-	ESP_ERROR_CHECK(uart_driver_install(config.uart.uart_port, uart_buffer_size,
-	                                    uart_buffer_size, 10, &uart_queue, 0));
-	delay_ms(1000);
-	ESP_LOGI(__FILE__, "Writing version...");
-	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_version,
-	                                              sizeof(nmea_config_version));
-	delay_ms(500);
-	ESP_LOGI(__FILE__, "Writing rate...");
-	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_rate,
-	                                              sizeof(nmea_config_rate));
-	delay_ms(500);
-	ESP_LOGI(__FILE__, "Writing port...");
-	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_port,
-	                                              sizeof(nmea_config_port));
-	delay_ms(1000);
-
-	ESP_LOGI(__FILE__, "Disconnection with GPS in config mode");
-	ESP_ERROR_CHECK(uart_driver_delete(config.uart.uart_port));
-
 	/* Init NMEA parser library */
-	delay_ms(1000);
 	ESP_LOGI(__FILE__, "Second connection with GPS in operation mode");
 	nmea_parser_handle_t nmea_hdl = nmea_parser_init(&config);
 
 	/* register event handler for NMEA parser library */
 	ESP_ERROR_CHECK(nmea_parser_add_handler(nmea_hdl, gps_event_handler, NULL));
-
-	ESP_ERROR_CHECK(drv_hmc5883_init(false));
 
 	TickType_t last_wake_time = xTaskGetTickCount();
 

@@ -121,6 +121,15 @@ typedef enum {
 	GPS_UNKNOWN /*!< Unknown statements detected */
 } nmea_event_id_t;
 
+
+/**
+ * @brief Pre initialize the NMEA parser and configure the GPS 
+ *
+ * @return esp_err_t
+ *  - ESP_OK: Success
+ */
+esp_err_t nmea_parser_preinit();
+
 /**
  * @brief Init NMEA Parser
  *

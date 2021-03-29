@@ -22,6 +22,7 @@
 #include "drv_bmp280.h"
 #include "drv_button.h"
 #include "drv_can.h"
+#include "drv_hmc5883.h"
 #include "drv_i2c.h"
 #include "drv_led.h"
 #include "drv_mpu_regs.h"
@@ -43,7 +44,7 @@
 
 void app_main() {
 
-	delay_ms(10); /* Let the system settle down */
+	delay_ms(100); /* Let the system settle down */
 
 	ESP_LOGI(__FILE__, "================= Starting System =================");
 
@@ -70,40 +71,44 @@ void app_main() {
 		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
 		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
 		ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
-		ESP_ERROR_CHECK(drv_mpu9250_init()); /* Accel and gyro init */
-		ESP_ERROR_CHECK(drv_ak8963_init()); /* Magnetometer init */
-		ESP_ERROR_CHECK(drv_bmp280_init()); /* Barometer init */
 		ESP_ERROR_CHECK(can_com_psu_init(1)); /* Is able to receive psu data */
 		/* CAN init is already done by can_com_psu_init */
 		/* ESP_ERROR_CHECK(can_com_ahrs_init()); Don't call can_com_ahrs_init */
 		/* ESP_ERROR_CHECK(can_com_gps_init()); Don't call can_com_gps_init */
+		ESP_ERROR_CHECK(nmea_parser_preinit()); /* Configure the GPS */
+		ESP_ERROR_CHECK(drv_mpu9250_init()); /* Accel and gyro init */
+		ESP_ERROR_CHECK(drv_ak8963_init()); /* Magnetometer init */
+		ESP_ERROR_CHECK(drv_bmp280_init()); /* Barometer init */
+		ESP_ERROR_CHECK(drv_hmc5883_init(false)); /* GPS magnetometer init */
 		ESP_ERROR_CHECK(attitude_init()); /* Starts attitude worker */
 
 	#elif defined(GPS_BOARD)
-		ESP_LOGI(__FILE__, "Board type is GPS");
-		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
-		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
-		ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
-		ESP_ERROR_CHECK(can_com_gps_init()); /* Init gps can interface */
-		ESP_ERROR_CHECK(drv_hmc5883_init());
+		/* DEPRECATED !!! */
+		// ESP_LOGI(__FILE__, "Board type is GPS");
+		// ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
+		// ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
+		// ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
+		// ESP_ERROR_CHECK(can_com_gps_init()); /* Init gps can interface */
+		// ESP_ERROR_CHECK(drv_hmc5883_init());
 
 	#endif
 
 	ESP_LOGI(__FILE__, "=========== System Started Successfully ===========");
 
 	#if defined(RAI_BOARD)
-		xTaskCreate(send_rai, "send_rai", 4096, NULL, 10, NULL);
-		xTaskCreate(recv_rai, "recv_rai", 4096, NULL, 20, NULL);
+		xTaskCreate(send_rai, "send_rai", 65536, NULL, 10, NULL);
+		xTaskCreate(recv_rai, "recv_rai", 65536, NULL, 20, NULL);
 
 	#elif defined(PSU_BOARD)
-		xTaskCreate(main_psu, "main_psu", 4096, NULL, 10, NULL);
+		xTaskCreate(main_psu, "main_psu", 65536, NULL, 10, NULL);
 
 	#elif defined(AHRS_BOARD)
-		xTaskCreate(main_ahrs, "main_ahrs", 4096, NULL, 20, NULL);
-		xTaskCreate(main_gps, "main_gps", 4096, NULL, 10, NULL); /* GPS is now part of AHRS */
+		xTaskCreate(main_ahrs, "main_ahrs", 65536, NULL, 20, NULL);
+		xTaskCreate(main_gps, "main_gps", 65536, NULL, 10, NULL); /* GPS is part of AHRS in v2 */
 
 	#elif defined(GPS_BOARD)
-		xTaskCreate(main_gps, "main_gps", 4096, NULL, 10, NULL);
+		/* DEPRECATED !!! */
+		// xTaskCreate(main_gps, "main_gps", 4096, NULL, 10, NULL);
 
 	#endif
 }

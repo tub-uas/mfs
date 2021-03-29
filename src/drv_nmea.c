@@ -9,6 +9,9 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
+#include "util.h"
+#include "drv_nmea_config.h"
+
 #define NMEA_PARSER_RING_BUFFER_SIZE (1024)
 #define NMEA_PARSER_RUNTIME_BUFFER_SIZE (NMEA_PARSER_RING_BUFFER_SIZE / 2)
 #define NMEA_MAX_STATEMENT_ITEM_LENGTH (16)
@@ -34,6 +37,52 @@ typedef struct {
 	TaskHandle_t tsk_hdl;                          /*!< NMEA Parser task handle */
 	QueueHandle_t event_queue;                     /*!< UART event queue handle */
 } esp_gps_t;
+
+esp_err_t nmea_parser_preinit() {
+
+	/* NMEA parser configuration */
+	nmea_parser_config_t config = NMEA_PARSER_CONFIG_DEFAULT();
+
+	/* Configure GPS settings for operation */
+	ESP_LOGI(__FILE__, "First connection with GPS in config mode");
+	uart_config_t uart_config = {
+		.baud_rate = 9600,
+		.data_bits = config.uart.data_bits,
+		.parity = config.uart.parity,
+		.stop_bits = config.uart.stop_bits,
+		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+		.source_clk = UART_SCLK_APB,
+	};
+
+	ESP_ERROR_CHECK(uart_param_config(config.uart.uart_port, &uart_config));
+
+	ESP_ERROR_CHECK(uart_set_pin(config.uart.uart_port,config.uart.tx_pin,
+			  config.uart.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+	const int uart_buffer_size = 65536;  // Enough space for temp messages
+	QueueHandle_t uart_queue;
+	ESP_ERROR_CHECK(uart_driver_install(config.uart.uart_port, uart_buffer_size,
+	                                    uart_buffer_size, 10, &uart_queue, 0));
+	delay_ms(1000);
+	ESP_LOGI(__FILE__, "Writing version...");
+	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_version,
+	                                              sizeof(nmea_config_version));
+	delay_ms(500);
+	ESP_LOGI(__FILE__, "Writing rate...");
+	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_rate,
+	                                              sizeof(nmea_config_rate));
+	delay_ms(500);
+	ESP_LOGI(__FILE__, "Writing port...");
+	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_port,
+	                                              sizeof(nmea_config_port));
+	delay_ms(1000);
+
+	ESP_LOGI(__FILE__, "Disconnecting with GPS in config mode");
+	ESP_ERROR_CHECK(uart_driver_delete(config.uart.uart_port));
+
+	return ESP_OK;
+}
+
 
 static float parse_lat_long(esp_gps_t *esp_gps) {
 	float ll = strtof(esp_gps->item_str, NULL);
@@ -484,10 +533,12 @@ nmea_parser_handle_t nmea_parser_init(const nmea_parser_config_t *config) {
 	esp_gps->all_statements |= (1 << STATEMENT_RMC);
 	esp_gps->all_statements |= (1 << STATEMENT_GLL);
 	esp_gps->all_statements |= (1 << STATEMENT_VTG);
+
 	/* Set attributes */
 	esp_gps->uart_port = config->uart.uart_port;
 	esp_gps->all_statements &= 0xFE;
-	/* Install UART friver */
+
+	/* Install UART driver */
 	uart_config_t uart_config = {
 		.baud_rate = config->uart.baud_rate,
 		.data_bits = config->uart.data_bits,
@@ -510,20 +561,25 @@ nmea_parser_handle_t nmea_parser_init(const nmea_parser_config_t *config) {
 		ESP_LOGE(__FILE__, "config uart gpio failed");
 		goto err_uart_config;
 	}
+
 	/* Set pattern interrupt, used to detect the end of a line */
 	uart_enable_pattern_det_baud_intr(esp_gps->uart_port, '\n', 1, 9, 0, 0);
+
 	/* Set pattern queue size */
 	uart_pattern_queue_reset(esp_gps->uart_port, config->uart.event_queue_size);
 	uart_flush(esp_gps->uart_port);
+
 	/* Create Event loop */
 	esp_event_loop_args_t loop_args = {
 		.queue_size = NMEA_EVENT_LOOP_QUEUE_SIZE,
 		.task_name = NULL
 	};
+
 	if (esp_event_loop_create(&loop_args, &esp_gps->event_loop_hdl) != ESP_OK) {
 		ESP_LOGE(__FILE__, "create event loop faild");
 		goto err_eloop;
 	}
+
 	/* Create NMEA Parser task */
 	BaseType_t err = xTaskCreate(nmea_parser_task_entry,
 	                             "nmea_parser",
@@ -531,12 +587,15 @@ nmea_parser_handle_t nmea_parser_init(const nmea_parser_config_t *config) {
 	                             esp_gps,
 	                             10,
 	                             &esp_gps->tsk_hdl);
+
 	if (err != pdTRUE) {
 		ESP_LOGE(__FILE__, "create NMEA Parser task failed");
 		goto err_task_create;
 	}
+
 	ESP_LOGI(__FILE__, "NMEA Parser init OK");
 	return esp_gps;
+
 	/*Error Handling*/
 err_task_create:
 	esp_event_loop_delete(esp_gps->event_loop_hdl);

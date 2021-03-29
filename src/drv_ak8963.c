@@ -27,7 +27,7 @@ static i2c_device_t ak8963;
 /* Internal gyroscope variables */
 static ak8963_sens_coeff_t sens_coeff;
 
-/* TODO Are determined once */
+/* Hard- and softiron magnetometer erros */
 static ak8963_mag_data_t hard_iron_err = {.x = MAG_HI_1,
                                           .y = MAG_HI_2,
                                           .z = MAG_HI_3};

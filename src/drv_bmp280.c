@@ -177,7 +177,7 @@ double bmp280_get_temp() {
 	return bmp280_get_temp_raw(&temp_calib, bmp280_calib);
 }
 
-/* Returns the ambient pressure in TODO */
+/* Returns the ambient pressure in ?? */
 double bmp280_get_press() {
 
 	static int32_t temp_calib;

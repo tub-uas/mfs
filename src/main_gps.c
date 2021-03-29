@@ -11,6 +11,7 @@
 
 #include "util.h"
 #include "drv_nmea.h"
+#include "drv_nmea_config.h"
 #include "drv_hmc5883.h"
 #include "drv_led.h"
 #include "can_com_gps.h"
@@ -121,7 +122,46 @@ void main_gps() {
 	/* NMEA parser configuration */
 	nmea_parser_config_t config = NMEA_PARSER_CONFIG_DEFAULT();
 
-	/* init NMEA parser library */
+	/* Configure GPS settings for operation */
+	ESP_LOGI(__FILE__, "First connection with GPS in config mode");
+	uart_config_t uart_config = {
+		.baud_rate = 9600,
+		.data_bits = config.uart.data_bits,
+		.parity = config.uart.parity,
+		.stop_bits = config.uart.stop_bits,
+		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+		.source_clk = UART_SCLK_APB,
+	};
+
+	ESP_ERROR_CHECK(uart_param_config(config.uart.uart_port, &uart_config));
+
+	ESP_ERROR_CHECK(uart_set_pin(config.uart.uart_port,config.uart.tx_pin,
+	          config.uart.rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+	const int uart_buffer_size = 65536;
+	QueueHandle_t uart_queue;
+	ESP_ERROR_CHECK(uart_driver_install(config.uart.uart_port, uart_buffer_size,
+	                                    uart_buffer_size, 10, &uart_queue, 0));
+	delay_ms(1000);
+	ESP_LOGI(__FILE__, "Writing version...");
+	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_version,
+	                                              sizeof(nmea_config_version));
+	delay_ms(500);
+	ESP_LOGI(__FILE__, "Writing rate...");
+	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_rate,
+	                                              sizeof(nmea_config_rate));
+	delay_ms(500);
+	ESP_LOGI(__FILE__, "Writing port...");
+	uart_write_bytes(config.uart.uart_port, (const char*)nmea_config_port,
+	                                              sizeof(nmea_config_port));
+	delay_ms(1000);
+
+	ESP_LOGI(__FILE__, "Disconnection with GPS in config mode");
+	ESP_ERROR_CHECK(uart_driver_delete(config.uart.uart_port));
+
+	/* Init NMEA parser library */
+	delay_ms(1000);
+	ESP_LOGI(__FILE__, "Second connection with GPS in operation mode");
 	nmea_parser_handle_t nmea_hdl = nmea_parser_init(&config);
 
 	/* register event handler for NMEA parser library */

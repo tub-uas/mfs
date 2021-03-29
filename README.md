@@ -39,6 +39,19 @@ For anyone who likes knowing what they're running before they run it:
 - `dialout` - group that controls access to serial ports (and other hardware too)
 - `$USER` - Bash variable containing current username (not a builtin, usually automatically set env variable)
 
+####  AHRS Calibration
+
+The AHRS system needs to be calibrated in order to function properly. More specifically, one needs to calibrate the IMU sensors on the AHRS board. That is:
+- the accelerometer,
+- the gyroscope,
+- and the magnetometer.
+The accelerometers scaling needs to be corrected in every axis and for negative and positive values differently. Thus, one needs to collect 2x 3 values.
+The gyroscope's bias needs to be corrected. This calibration step is done automatically every time you start-up the system. It collects 3 values.
+
+The magnetometer requires the correction of the hard- and softiron error. The hardiron error consists of 3 values, while the softiron error consists of a 3x3 correction matrix. Additionally, 3 current correction scaling values need to be determined using linear regression.
+
+*IMPORTANT: When calibrating the system you need to select the "NATIVE" orientation in `board.h` and uncomment (activate) the "CALIBRATION" flag in `drv_ak8963.c`.*
+
 ## Architecture
 
 TODO

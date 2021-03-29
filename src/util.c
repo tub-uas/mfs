@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -63,4 +64,25 @@ uint32_t get_time_ms() {
 
 float get_time_s() {
 	return xTaskGetTickCount() / (portTICK_PERIOD_MS*1000.0);
+}
+
+float mean(float vals[], int len) {
+	float sum = 0.0;
+	for (int i=0; i<len; i++) {
+		sum += vals[i];
+	}
+	return sum / len;
+}
+
+float var(float vals[], int len) {
+	float mea = mean(vals, len);
+	float var = 0.0;
+	for (int i=0; i<len; i++) {
+		var += pow(vals[i]-mea, 2);
+	}
+	return var / len;
+}
+
+float stde(float vals[], int len) {
+	return sqrt(var(vals, len));
 }

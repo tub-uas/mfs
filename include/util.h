@@ -23,5 +23,11 @@ uint32_t get_time_ms();
 
 float get_time_s();
 
+float mean(float vals[], int len);
+
+float var(float vals[], int len);
+
+float stde(float vals[], int len);
+
 
 #endif // UTIL_H

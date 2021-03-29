@@ -14,6 +14,7 @@
 #include "driver/i2c.h"
 
 #include "drv_i2c.h"
+#include "drv_mpu9250_const.h"
 #include "board.h"
 #include "util.h"
 
@@ -23,9 +24,13 @@ static i2c_device_t mpu9250;
 /* Internal accelerometer variables */
 static float acc_scale_val = 0.0;
 
-/* TODO Are determined once */
-static mpu9250_acc_data_t acc_scale_err_pos = {.x = 1.0, .y = 1.0, .z = 1.0};
-static mpu9250_acc_data_t acc_scale_err_neg = {.x = 1.0, .y = 1.0, .z = 1.0};
+/* Accelerometer scaling correction */
+static mpu9250_acc_data_t acc_scale_err_pos = {.x = ACC_SCALE_POS_1,
+                                               .y = ACC_SCALE_POS_2,
+                                               .z = ACC_SCALE_POS_3};
+static mpu9250_acc_data_t acc_scale_err_neg = {.x = ACC_SCALE_NEG_1,
+                                               .y = ACC_SCALE_NEG_2,
+                                               .z = ACC_SCALE_NEG_3};
 
 /* Internal gyroscope variables */
 static float gyr_scale_val = 0.0;
@@ -33,6 +38,7 @@ static mpu9250_gyr_data_t gyr_bias_err;
 
 esp_err_t drv_mpu9250_init() {
 
+	/* Set I2C parameter */
 	mpu9250.port = 0;
 	mpu9250.scl = 32;
 	mpu9250.sda = 33;
@@ -47,6 +53,7 @@ esp_err_t drv_mpu9250_init() {
 		return ESP_FAIL;
 	}
 
+	/* Configure MPU9250 I2C connection */
 	ret_mpu9250 |= drv_mpu9250_reset();
 	delay_ms(500);
 	ret_mpu9250 |= drv_mpu9250_config_clk();
@@ -55,11 +62,11 @@ esp_err_t drv_mpu9250_init() {
 	delay_ms(10);
 	ret_mpu9250 |= drv_mpu9250_set_acc_filter();
 	delay_ms(10);
-	ret_mpu9250 |= drv_mpu9250_set_acc_scale(AS_4); // 4g
+	ret_mpu9250 |= drv_mpu9250_set_acc_scale(AS_4);  // 4g
 	delay_ms(10);
 	ret_mpu9250 |= drv_mpu9250_set_gyr_filter();
 	delay_ms(10);
-	ret_mpu9250 |= drv_mpu9250_set_gyr_scale(GS_500); // 500 degree per second
+	ret_mpu9250 |= drv_mpu9250_set_gyr_scale(GS_500);  // 500 degree per second
 	delay_ms(10);
 	ret_mpu9250 |= drv_mpu9250_enable_sensors();
 	delay_ms(100);
@@ -215,6 +222,7 @@ esp_err_t drv_mpu9250_read_acc_native(mpu9250_acc_data_t *acc) {
 	uint8_t raw[6];
 	drv_i2c_read_bytes(mpu9250, ACCEL_XOUT_H, 6, raw);
 
+	/* Scale accelerometer values according to mpu settings */
 	acc->x = (int16_t)(((uint16_t)raw[0] << 8) | raw[1]) * acc_scale_val;
 	acc->y = (int16_t)(((uint16_t)raw[2] << 8) | raw[3]) * acc_scale_val;
 	acc->z = (int16_t)(((uint16_t)raw[4] << 8) | raw[5]) * acc_scale_val;
@@ -303,8 +311,8 @@ esp_err_t drv_mpu9250_read_gyr(mpu9250_gyr_data_t *gyr) {
 
 esp_err_t drv_mpu9250_calibrate(mpu9250_gyr_data_t *gyr) {
 
-	#define NUM_CAL_SAMPLES (1000)
-	mpu9250_gyr_data_t gyr_raw;
+	#define NUM_CAL_SAMPLES (500)
+	float gyr_raw[3][NUM_CAL_SAMPLES];
 	TickType_t last_wake_time = xTaskGetTickCount();
 
 	for (int i=0; i<NUM_CAL_SAMPLES; i++) {
@@ -314,20 +322,35 @@ esp_err_t drv_mpu9250_calibrate(mpu9250_gyr_data_t *gyr) {
 			return ESP_FAIL;
 		}
 
-		gyr_raw.x += gyr_tmp.x;
-		gyr_raw.y += gyr_tmp.y;
-		gyr_raw.z += gyr_tmp.z;
+		/* Store values */
+		gyr_raw[0][i] = gyr_tmp.x;
+		gyr_raw[1][i] = gyr_tmp.y;
+		gyr_raw[2][i] = gyr_tmp.z;
 
-		// TODO check that prev to current value difference is not to high
+		/* Print progress */
+		if ((i+1) % 50 == 0) {
+			ESP_LOGI(__FILE__, "%d %%", (int)((i+1) / 5));
+		}
 
-		delay_until_ms(&last_wake_time, 10);
+		delay_until_ms(&last_wake_time, 20);
 	}
 
-	gyr->x = gyr_raw.x / NUM_CAL_SAMPLES;
-	gyr->y = gyr_raw.y / NUM_CAL_SAMPLES;
-	gyr->z = gyr_raw.z / NUM_CAL_SAMPLES;
+	ESP_LOGI(__FILE__, "Std x: %f", stde(gyr_raw[0], NUM_CAL_SAMPLES));
+	ESP_LOGI(__FILE__, "Std y: %f", stde(gyr_raw[1], NUM_CAL_SAMPLES));
+	ESP_LOGI(__FILE__, "Std z: %f", stde(gyr_raw[2], NUM_CAL_SAMPLES));
 
-	// TODO check that E() and Var() make sense
+	#define STD_THR 0.01
+	if (stde(gyr_raw[0], NUM_CAL_SAMPLES) > STD_THR
+	 || stde(gyr_raw[1], NUM_CAL_SAMPLES) > STD_THR
+	 || stde(gyr_raw[2], NUM_CAL_SAMPLES) > STD_THR) {
+		ESP_LOGE(__FILE__, "Calibration deviation too high");
+		return ESP_FAIL;
+	}
+
+	/* Store means in error constants */
+	gyr->x = mean(gyr_raw[0], NUM_CAL_SAMPLES);
+	gyr->y = mean(gyr_raw[1], NUM_CAL_SAMPLES);
+	gyr->z = mean(gyr_raw[2], NUM_CAL_SAMPLES);
 
 	return ESP_OK;
 }

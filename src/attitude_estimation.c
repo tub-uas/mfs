@@ -17,6 +17,16 @@
 #include "drv_ak8963_const.h"
 #include "drv_bmp280.h"
 #include "drv_mpu9250.h"
+
+// == WITH GPS ==
+#include "drv_hmc5883.h"
+
+// == ATTITUDE AND HELPER == 
+#include "algo_attitude64.h"
+#include "util_math64.h"
+#include "util_quaternion64.h"
+
+
 #include "drv_led.h"
 #include "can_com_psu.h"
 #include "util_vecmath.h"
@@ -29,6 +39,11 @@
 
 #define SQRT2           1.41421356237f
 #define INVSQRT2        0.70771067811f
+
+#define K_ACC           4.2735e-2f
+#define K_MAG           1.4085e-2f
+#define K_BIAS_ACC      6.6774e-7f
+#define K_BIAS_MAG      7.0423e-8f
 
 static can_com_ahrs_t ahrs_data;
 static SemaphoreHandle_t ahrs_sem = NULL;
@@ -206,7 +221,8 @@ void attitude_worker() {
 	TickType_t last_wake_time = xTaskGetTickCount();
 
 	drv_led_set(LED_ON_ALIVE);
-
+	double q_att[4] = {1.0f,0.0f,0.0f,0.0f};
+	double b_gyr[3] = {0.0f,0.0f,0.0f};
 	while (1) {
 
 		can_com_psu_t psu_data;
@@ -223,12 +239,15 @@ void attitude_worker() {
 		if (drv_mpu9250_read_acc(&acc) != ESP_OK) {
 			ESP_LOGE(__FILE__, "Could not read accel data from mpu9250");
 		}
+		drv_mpu9250_correct_acc_data(&acc);
+		
 
 		mpu9250_gyr_data_t gyr;
 		memset(&gyr, 0, sizeof(gyr));
 		if (drv_mpu9250_read_gyr(&gyr) != ESP_OK) {
 			ESP_LOGE(__FILE__, "Could not read gyro data from mpu9250");
 		}
+		drv_mpu9250_correct_gyr_data(&gyr);
 
 		ak8963_mag_data_t mag;
 		memset(&mag, 0, sizeof(mag));
@@ -241,20 +260,39 @@ void attitude_worker() {
 		} else {
 			last_mag = mag;
 		}
+		drv_ak8963_correct_data(&mag);
+
+		#if defined(GPS_MAG)
+			drv_hmc5883_data_t compass_data;
+			memset(&compass_data, 0, sizeof(compass_data));
+			drv_hmc5883_get_data(&compass_data);
+			drv_hmc5883_correct_data(&compass_data);
+			mag.x = compass_data.x;
+			mag.y = compass_data.y;
+			mag.z = compass_data.z;
+		#endif
 
 		// printf("acc x %10.5f, y %10.5f, z %10.5f ", acc.x, acc.y, acc.z);
 		// printf("gyr x %10.5f, y %10.5f, z %10.5f ", gyr.x, gyr.y, gyr.z);
 		// printf("mag x %10.5f, y %10.5f, z %10.5f %10.5f \n", mag.x, mag.y, mag.z, get_time_s());
 
 		/* Correct mag data for distortion by main current */
-		compensate_mag_with_current(psu_data.sense_main_curr, &mag);
+		// compensate_mag_with_current(psu_data.sense_main_curr, &mag);
 
 		static float last_time = 0.0;
 		float delta_time = get_time_s() - last_time;
 		last_time = get_time_s();
 
-		float att[3] = {0.0};
-		attitude_est((float*)&acc, (float*)&gyr, (float*)&mag, att, delta_time);
+		double datt[3] = {0.0};
+		
+		double dacc[3] = {acc.x,acc.y,acc.z};
+		double dgyr[3] = {gyr.x,gyr.y,gyr.z};
+		double dmag[3] = {mag.x,mag.y,mag.z};
+
+		algo_attitude_ts64(q_att,b_gyr,dacc,dgyr,dmag,K_ACC,K_MAG,K_BIAS_ACC,K_BIAS_MAG,delta_time);
+		quaternion_euler_conv64(q_att,datt);
+		float att[3] = {datt[0],datt[1],datt[2]};
+		// attitude_est((float*)&acc, (float*)&gyr, (float*)&mag, att, delta_time);
 		// printf("Att: %10.5f, %10.5f, %10.5f \n", att[0], att[1], att[2]);
 
 		float temp = bmp280_get_temp();

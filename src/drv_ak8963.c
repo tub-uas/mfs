@@ -35,6 +35,18 @@ static float soft_iron_err[3][3] = {{MAG_SI_11, MAG_SI_12, MAG_SI_13},
                                     {MAG_SI_21, MAG_SI_22, MAG_SI_23},
                                     {MAG_SI_31, MAG_SI_32, MAG_SI_33}};
 
+static const double ak8963_softiron[3][3] = {
+	{1.0119,8.7701e-3,-5.2884e-3},
+	{8.7701e-3,9.8606e-1,-8.2197e-4},
+	{-5.2884e-3,-8.2197e-4,9.9030e-1},
+};
+
+static const double ak8963_hardiron[3] = {
+	6.3308,
+	-6.2664,
+	2.6534e1,
+};
+
 esp_err_t drv_ak8963_init() {
 
 	ak8963.port = 0;
@@ -132,7 +144,7 @@ esp_err_t drv_ak8963_read_mag_native(ak8963_mag_data_t *mag) {
 		int16_t raw[3];
 		raw[0] = (int16_t)((data[1] << 8) | data[0]);
 		raw[1] = (int16_t)((data[3] << 8) | data[2]);
-		raw[2] = -(int16_t)((data[5] << 8) | data[4]);
+		raw[2] = (int16_t)((data[5] << 8) | data[4]);
 
 		#if !defined(CALIBRATION)
 			float mag_tmp[3];
@@ -185,7 +197,7 @@ esp_err_t drv_ak8963_read_mag(ak8963_mag_data_t *mag) {
 	#elif defined(DEFAULT_ORIENT)
 		mag->x = mag_tmp.x;
 		mag->y = mag_tmp.y;
-		mag->z = -mag_tmp.z;
+		mag->z = mag_tmp.z;
 	#elif defined(HYPE_ORIENT)
 		mag->x = mag_tmp.x;
 		mag->y = mag_tmp.z;
@@ -210,4 +222,21 @@ void drv_ak8963_test() {
 		delay_ms(10);
 	}
 
+}
+
+esp_err_t drv_ak8963_correct_data(ak8963_mag_data_t *data) {
+
+	double tmp_0 = data->x + ak8963_hardiron[0];
+	double tmp_1 = data->y + ak8963_hardiron[1];
+	double tmp_2 = data->z + ak8963_hardiron[2];
+	double out[3] = {0.0};
+
+	out[0] = ak8963_softiron[0][0] * tmp_0 + ak8963_softiron[0][1]* tmp_1 + ak8963_softiron[0][2] * tmp_2;
+	out[1] = ak8963_softiron[1][0] * tmp_0 + ak8963_softiron[1][1]* tmp_1 + ak8963_softiron[1][2] * tmp_2;
+	out[2] = ak8963_softiron[2][0] * tmp_0 + ak8963_softiron[2][1]* tmp_1 + ak8963_softiron[2][2] * tmp_2;
+	data->x = out[0];
+	data->y = out[1];
+	data->z = out[2];
+
+	return ESP_OK;
 }

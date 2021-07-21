@@ -198,10 +198,6 @@ esp_err_t drv_ak8963_read_mag(ak8963_mag_data_t *mag) {
 		mag->x = mag_tmp.x;
 		mag->y = mag_tmp.y;
 		mag->z = mag_tmp.z;
-	#elif defined(HYPE_ORIENT)
-		mag->x = mag_tmp.x;
-		mag->y = mag_tmp.z;
-		mag->z = -mag_tmp.y;
 	#else
 		#error "Unkown board orientation"
 	#endif
@@ -234,9 +230,14 @@ esp_err_t drv_ak8963_correct_data(ak8963_mag_data_t *data) {
 	out[0] = ak8963_softiron[0][0] * tmp_0 + ak8963_softiron[0][1]* tmp_1 + ak8963_softiron[0][2] * tmp_2;
 	out[1] = ak8963_softiron[1][0] * tmp_0 + ak8963_softiron[1][1]* tmp_1 + ak8963_softiron[1][2] * tmp_2;
 	out[2] = ak8963_softiron[2][0] * tmp_0 + ak8963_softiron[2][1]* tmp_1 + ak8963_softiron[2][2] * tmp_2;
-	data->x = out[0];
-	data->y = out[1];
-	data->z = out[2];
-
+	#if defined(HYPE_ORIENT)
+		data->x = out[0]; // X
+		data->y = out[2]; // Z
+		data->z = -out[1]; // -Y
+	#else
+		data->x = out[0];
+		data->y = out[1];
+		data->z = out[2];
+	#endif
 	return ESP_OK;
 }

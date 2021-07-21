@@ -268,10 +268,6 @@ esp_err_t drv_mpu9250_read_acc(mpu9250_acc_data_t *acc) {
 		acc->x = acc_tmp.y;
 		acc->y = acc_tmp.x;
 		acc->z = -acc_tmp.z;
-	#elif defined(HYPE_ORIENT)
-		acc->x = acc_tmp.y;
-		acc->y = -acc_tmp.z;
-		acc->z = -acc_tmp.x;
 	#else
 		#error "Unkown board orientation"
 	#endif
@@ -316,10 +312,6 @@ esp_err_t drv_mpu9250_read_gyr(mpu9250_gyr_data_t *gyr) {
 		gyr->x = gyr_tmp.y;
 		gyr->y = gyr_tmp.x;
 		gyr->z = -gyr_tmp.z;
-	#elif defined(HYPE_ORIENT)
-		gyr->x = gyr_tmp.y;
-		gyr->y = -gyr_tmp.z;
-		gyr->z = -gyr_tmp.x;
 	#else
 		#error "Unkown board orientation"
 	#endif
@@ -405,17 +397,30 @@ esp_err_t drv_mpu9250_correct_acc_data(mpu9250_acc_data_t *data) {
 	out[0] = mpu9250_acc_scale_err[0][0] * data->x + mpu9250_acc_scale_err[0][1]* data->x + mpu9250_acc_scale_err[0][2] * data->x + mpu9250_acc_bias_err[0];
 	out[1] = mpu9250_acc_scale_err[1][0] * data->y + mpu9250_acc_scale_err[1][1]* data->y + mpu9250_acc_scale_err[1][2] * data->y + mpu9250_acc_bias_err[1];
 	out[2] = mpu9250_acc_scale_err[2][0] * data->z + mpu9250_acc_scale_err[2][1]* data->z + mpu9250_acc_scale_err[2][2] * data->z + mpu9250_acc_bias_err[2];
-	data->x = out[0];
-	data->y = out[1];
-	data->z = out[2];
+	#if defined(HYPE_ORIENT)
+		data->x = out[0]; // X 
+		data->y = out[2]; // Z
+		data->z = -out[1]; // -Y
+	#else
+		data->x = out[0];
+		data->y = out[1];
+		data->z = out[2];
+	#endif
 	return ESP_OK;
 }
 
 esp_err_t drv_mpu9250_correct_gyr_data(mpu9250_gyr_data_t *data) {
 
-	data->x = data->x - mpu9250_gyr_bias[0];
-	data->y = data->y - mpu9250_gyr_bias[1];
-	data->z = data->z - mpu9250_gyr_bias[2];
+	#if defined(HYPE_ORIENT)
+		data->x = (data->x - mpu9250_gyr_bias[0]);
+		data->y = (data->z - mpu9250_gyr_bias[2]); 
+		data->z = -(data->y - mpu9250_gyr_bias[1]);
+		
+	#else
+		data->x = data->x - mpu9250_gyr_bias[0];
+		data->y = data->y - mpu9250_gyr_bias[1];
+		data->z = data->z - mpu9250_gyr_bias[2];
+	#endif
 	return ESP_OK;
 }
 

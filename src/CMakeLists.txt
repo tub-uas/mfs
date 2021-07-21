@@ -31,6 +31,9 @@ set(app_sources
 	"util_quaternion.c"
 	"util_vecmath.c"
 	"util.c"
+	"util_quaternion64.c"
+	"util_math64.c"
+	"algo_attitude64.c"
 )
 
 idf_component_register(SRCS ${app_sources})

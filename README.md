@@ -1,7 +1,5 @@
 # Modular Flight System (MFS)
 
-Das ist ein Test.
-
 This repository contains the software running on the ESP32 chips that are part of the Modular Flight System (MFS). We are currently supporting 4 different board types / PCBs (Printed Circuit Boards):
 
 - RAI (Radio Actuator Interface)

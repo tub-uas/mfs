@@ -228,4 +228,7 @@ extern "C" {
 ```
 
 ## 2022 TODO
-- [ ] Create todo list
+- [ ] Refactor main `README.md`
+- [ ] Switch over to clang format
+- [ ] Go through code and handle licenses properly 
+- [ ] Check installation and compilation flow

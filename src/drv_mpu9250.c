@@ -32,6 +32,24 @@ static mpu9250_acc_data_t acc_scale_err_neg = {.x = ACC_SCALE_NEG_1,
                                                .y = ACC_SCALE_NEG_2,
                                                .z = ACC_SCALE_NEG_3};
 
+static const double mpu9250_gyr_bias[3] = {
+	8.1075e-3,
+	5.2668e-2,
+	1.1399e-3,
+};
+
+static const double mpu9250_acc_scale_err[3][3] = {
+	{9.9737e-1,-1.1525e-2,1.6541e-2},
+	{-7.0567e-3,9.9956e-1,2.3853e-2},
+	{-3.2499e-3,3.1168e-3,9.9286e-1},
+};
+
+static const double mpu9250_acc_bias_err[3] = {
+	-1.5554e-2,
+	3.7109e-2,
+	4.1685e-2,
+};
+
 /* Internal gyroscope variables */
 static float gyr_scale_val = 0.0;
 static mpu9250_gyr_data_t gyr_bias_err;
@@ -78,7 +96,7 @@ esp_err_t drv_mpu9250_init() {
 	ret_mpu9250 |= drv_mpu9250_enable_sensors();
 	delay_ms(100);
 	ESP_LOGI(__FILE__,"Calibrating MPU9250 ...");
-	ret_mpu9250 |= drv_mpu9250_calibrate(&gyr_bias_err);
+	// ret_mpu9250 |= drv_mpu9250_calibrate(&gyr_bias_err);
 
 	// printf("gyr_bias_err x %10.5f, y %10.5f, z %10.5f \n",
 	//        gyr_bias_err.x, gyr_bias_err.y, gyr_bias_err.z);
@@ -257,10 +275,6 @@ esp_err_t drv_mpu9250_read_acc(mpu9250_acc_data_t *acc) {
 		acc->x = acc_tmp.y;
 		acc->y = acc_tmp.x;
 		acc->z = -acc_tmp.z;
-	#elif defined(HYPE_ORIENT)
-		acc->x = acc_tmp.y;
-		acc->y = -acc_tmp.z;
-		acc->z = -acc_tmp.x;
 	#else
 		#error "Unkown board orientation"
 	#endif
@@ -305,10 +319,6 @@ esp_err_t drv_mpu9250_read_gyr(mpu9250_gyr_data_t *gyr) {
 		gyr->x = gyr_tmp.y;
 		gyr->y = gyr_tmp.x;
 		gyr->z = -gyr_tmp.z;
-	#elif defined(HYPE_ORIENT)
-		gyr->x = gyr_tmp.y;
-		gyr->y = -gyr_tmp.z;
-		gyr->z = -gyr_tmp.x;
 	#else
 		#error "Unkown board orientation"
 	#endif
@@ -387,3 +397,37 @@ void drv_mpu9250_test() {
 	}
 
 }
+
+esp_err_t drv_mpu9250_correct_acc_data(mpu9250_acc_data_t *data) {
+
+	double out[3] = {0.0f};
+	out[0] = mpu9250_acc_scale_err[0][0] * data->x + mpu9250_acc_scale_err[0][1]* data->x + mpu9250_acc_scale_err[0][2] * data->x + mpu9250_acc_bias_err[0];
+	out[1] = mpu9250_acc_scale_err[1][0] * data->y + mpu9250_acc_scale_err[1][1]* data->y + mpu9250_acc_scale_err[1][2] * data->y + mpu9250_acc_bias_err[1];
+	out[2] = mpu9250_acc_scale_err[2][0] * data->z + mpu9250_acc_scale_err[2][1]* data->z + mpu9250_acc_scale_err[2][2] * data->z + mpu9250_acc_bias_err[2];
+	#if defined(HYPE_ORIENT)
+		data->x = out[0]; // X 
+		data->y = out[2]; // Z
+		data->z = -out[1]; // -Y
+	#else
+		data->x = out[0];
+		data->y = out[1];
+		data->z = out[2];
+	#endif
+	return ESP_OK;
+}
+
+esp_err_t drv_mpu9250_correct_gyr_data(mpu9250_gyr_data_t *data) {
+
+	#if defined(HYPE_ORIENT)
+		data->x = (data->x - mpu9250_gyr_bias[0]);
+		data->y = (data->z - mpu9250_gyr_bias[2]); 
+		data->z = -(data->y - mpu9250_gyr_bias[1]);
+		
+	#else
+		data->x = data->x - mpu9250_gyr_bias[0];
+		data->y = data->y - mpu9250_gyr_bias[1];
+		data->z = data->z - mpu9250_gyr_bias[2];
+	#endif
+	return ESP_OK;
+}
+

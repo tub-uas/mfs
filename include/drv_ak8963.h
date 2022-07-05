@@ -61,4 +61,6 @@ esp_err_t drv_ak8963_read_mag(ak8963_mag_data_t *mag);
 
 void drv_ak8963_test();
 
+esp_err_t drv_ak8963_correct_data(ak8963_mag_data_t *data);
+
 #endif // DRV_AK8963_H

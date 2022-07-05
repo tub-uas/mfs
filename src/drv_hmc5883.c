@@ -27,6 +27,18 @@ static const float gain_values [] = {
 	[HMC5883L_GAIN_230]  = 4.35
 };
 
+static const double hmc5883_softiron[3][3] = {
+	{1.04767,-7.1446e-3,1.9039e-2},
+	{-7.1446e-3,9.852e-1,-6.2472e-2},
+	{1.9039e-2,-6.2472e-2,9.4355e-1},
+};
+
+static const double hmc5883_hardiron[3] = {
+	6.5391,
+	-1.5162e1,
+	-3.8937,
+};
+
 static i2c_device_t hmc5883;
 static drv_hmc5883_opmode_t opmode;
 float gain = gain_values[HMC5883L_GAIN_1090];
@@ -210,6 +222,31 @@ esp_err_t drv_hmc5883_get_data(drv_hmc5883_data_t *data) {
 
 	esp_err_t ret = drv_hmc5883_get_raw_data(&raw);
 	drv_hmc5883_raw_to_mt(raw, data);
+	
+	// TRANSFORM ORIENTATION FROM HYPE WING
+	// drv_hmc5883_correct_data(data);
+	float tmp_x = data->x*0.7071, tmp_y = data->y*0.7071; 
+	data->x = -tmp_y+tmp_x;
+	data->y = tmp_x+tmp_y;
+	
+	// data->z = data->z; // no necessary computation
 
 	return ret;
+}
+
+esp_err_t drv_hmc5883_correct_data(drv_hmc5883_data_t *data) {
+
+	double tmp_0 = data->x + hmc5883_hardiron[0];
+	double tmp_1 = data->y + hmc5883_hardiron[1];
+	double tmp_2 = data->z + hmc5883_hardiron[2];
+	double out[3] = {0.0f};
+
+	out[0] = hmc5883_softiron[0][0] * tmp_0 + hmc5883_softiron[0][1]* tmp_1 + hmc5883_softiron[0][2] * tmp_2;
+	out[1] = hmc5883_softiron[1][0] * tmp_0 + hmc5883_softiron[1][1]* tmp_1 + hmc5883_softiron[1][2] * tmp_2;
+	out[2] = hmc5883_softiron[2][0] * tmp_0 + hmc5883_softiron[2][1]* tmp_1 + hmc5883_softiron[2][2] * tmp_2;
+	data->x = out[0];
+	data->y = out[1];
+	data->z = out[2];
+
+	return ESP_OK;
 }

@@ -71,4 +71,8 @@ float drv_mpu9250_read_temp();
 
 void drv_mpu9250_test();
 
+esp_err_t drv_mpu9250_correct_acc_data(mpu9250_acc_data_t *data);
+
+esp_err_t drv_mpu9250_correct_gyr_data(mpu9250_gyr_data_t *data);
+
 #endif // DRV_MPU9250_H

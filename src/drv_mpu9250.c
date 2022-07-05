@@ -47,7 +47,14 @@ esp_err_t drv_mpu9250_init() {
 	mpu9250.timeout = 1000;
 
 	esp_err_t ret_mpu9250 = drv_i2c_init(mpu9250);
-
+	uint8_t resp;
+	// for(uint8_t i = 0; i < 0x7F; i++) {
+		//  resp = 0x00;
+		// mpu9250.addr = i;
+		// drv_i2c_read_bytes(mpu9250,0x75,1,&resp);
+		// ESP_LOGI(__FILE__,"RESPONSE ON 0x75 [%hhu]- %02X",i,resp);
+		// delay_ms(50);
+	// }
 	if (drv_mpu9250_ping()) {
 		ESP_LOGE(__FILE__,"MPU9250 not found");
 		return ESP_FAIL;

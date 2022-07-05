@@ -71,9 +71,9 @@ void app_main() {
 		ESP_ERROR_CHECK(drv_led_init()); /* Starts LED worker */
 		ESP_ERROR_CHECK(drv_button_init()); /* Configure user button */
 		ESP_ERROR_CHECK(drv_sense_init()); /* Starts local voltage monitoring */
-		ESP_ERROR_CHECK(can_com_psu_init(1)); /* Is able to receive psu data */
+		ESP_ERROR_CHECK(can_com_psu_init(0)); /* Is able to receive psu data */
 		/* CAN init is already done by can_com_psu_init */
-		/* ESP_ERROR_CHECK(can_com_ahrs_init()); Don't call can_com_ahrs_init */
+		// ESP_ERROR_CHECK(can_com_ahrs_init()); // Don't call can_com_ahrs_init
 		/* ESP_ERROR_CHECK(can_com_gps_init()); Don't call can_com_gps_init */
 		ESP_ERROR_CHECK(nmea_parser_preinit()); /* Configure the GPS */
 		ESP_ERROR_CHECK(drv_mpu9250_init()); /* Accel and gyro init */
@@ -104,7 +104,7 @@ void app_main() {
 
 	#elif defined(AHRS_BOARD)
 		xTaskCreate(main_ahrs, "main_ahrs", 65536, NULL, 20, NULL);
-		xTaskCreate(main_gps, "main_gps", 65536, NULL, 10, NULL); /* GPS is part of AHRS in v2 */
+		// xTaskCreate(main_gps, "main_gps", 65536, NULL, 10, NULL); /* GPS is part of AHRS in v2 */
 
 	#elif defined(GPS_BOARD)
 		/* DEPRECATED !!! */

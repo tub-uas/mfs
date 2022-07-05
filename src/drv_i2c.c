@@ -24,6 +24,7 @@ esp_err_t drv_i2c_init(i2c_device_t dev) {
 	conf.sda_io_num = dev.sda;
 	conf.sda_pullup_en = GPIO_PULLUP_DISABLE;
 	conf.master.clk_speed = dev.speed;
+	conf.clk_flags = 0;
 	esp_err_t ret_i2c = i2c_param_config(dev.port, &conf);
 
 	/* Start the I2C Driver */

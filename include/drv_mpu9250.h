@@ -6,7 +6,7 @@
 #include "esp_err.h"
 
 #define MPU9250_ADDR          0x68
-#define MPU9250_WHO_AM_I_RESP 0x73
+#define MPU9250_WHO_AM_I_RESP 0x73 // <- 0x73
 #define MPU9250_TIMEOUT       100
 
 typedef enum {
